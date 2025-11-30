@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary: #DB4444;
+  --secondary: #6b7280; /* Gray color */
+  --tertiary: #000000; /* Black color */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-tertiary: var(--tertiary);
+  --font-sans: Inter, sans-serif;
+  --font-mono: Inter, monospace; /* Assuming mono also uses Inter, adjust if needed */
+}
+
+/* Removed dark mode media query to keep only light theme */
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Inter, sans-serif;
+}
