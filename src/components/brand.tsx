@@ -15,20 +15,22 @@ export default function Brand() {
             <Image
                 src="/brand.png"
                 alt={appName + " Logo"}
-                width={124}
-                height={124}
-                className="hidden sm:block"
+                width={0}
+                height={0}
+                className="hidden sm:block h-10 w-auto"
                 priority
-                style={{ width: 'auto', height: 'auto' }}
+                sizes="100vw"
+                style={{width: 'auto', height: '2.5rem'}}
             />
             <Image
                 src="/brand-small.png"
                 alt={appName + " Logo"}
-                width={40}
-                height={40}
-                className="sm:hidden"
+                width={0}
+                height={0}
+                className="sm:hidden h-10 w-auto"
                 priority
-                style={{ width: 'auto', height: 'auto' }}
+                sizes="100vw"
+                style={{width: 'auto', height: '2.5rem'}}
             />
         </div>
     );
