@@ -9,6 +9,8 @@ export default function Header() {
         console.log("Sell button clicked!");
     };
 
+    const appName = process.env.NEXT_PUBLIC_APP_NAME
+
     return (
         <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
             <LayoutTemplate>
@@ -42,6 +44,7 @@ export default function Header() {
                             icon={Plus}
                             title="Sell"
                             onClick={handleSellClick}
+                            ariaLabel={"Start selling your items on " + appName}
                         />
                     </div>
                 </div>
