@@ -1,7 +1,7 @@
-import {BannerItem, BannerApiResponse} from "@/types/banner";
+import {CategoriesApiResponse, CategoryItem} from "@/types/category";
 
-class BannerService {
-    async getBanners(): Promise<BannerItem[] | null> {
+class CategoryService {
+    async getCategories(): Promise<CategoryItem[] | null> {
         const BE_API = process.env.BE_API;
 
         if (!BE_API) {
@@ -9,7 +9,7 @@ class BannerService {
             return null;
         }
 
-        const url = `${BE_API}banners/`;
+        const url = `${BE_API}categories/`;
 
         try {
             const res = await fetch(url, {
@@ -21,11 +21,11 @@ class BannerService {
             });
 
             if (!res.ok) {
-                console.error(`Failed to fetch banners:`, res.status);
+                console.error(`Failed to fetch categories:`, res.status);
                 return null;
             }
 
-            const data: BannerApiResponse = await res.json();
+            const data: CategoriesApiResponse = await res.json();
 
             if (!data?.data || !Array.isArray(data.data)) {
                 console.error("Invalid banner response structure", data);
@@ -34,11 +34,11 @@ class BannerService {
 
             return data.data;
         } catch (error) {
-            console.error("Error in BetaService.getBanners:", error);
+            console.error("Error in CategoryService.getCategories:", error);
             return null;
         }
     }
 }
 
-export const bannerService = new BannerService();
-export default bannerService
+export const categoryService = new CategoryService();
+export default categoryService;

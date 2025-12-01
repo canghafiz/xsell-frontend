@@ -3,6 +3,7 @@ import { Search, Plus } from 'lucide-react';
 import LayoutTemplate from "@/components/layout";
 import Brand from "@/components/brand";
 import PrimaryBtn from "@/components/primary_btn";
+import Categories from "@/components/categories";
 
 export default function Header() {
     const handleSellClick = () => {
@@ -48,6 +49,7 @@ export default function Header() {
                         />
                     </div>
                 </div>
+                <Categories/>
             </LayoutTemplate>
         </header>
     );

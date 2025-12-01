@@ -99,7 +99,7 @@ export default function BannersClient({ initialBanners, imagePrefixUrl }: Banner
                                 onClick={() => !isActive && goToSlide((currentIndex + idx) % banners.length)}
                             >
                                 <a
-                                    href={isActive ? banner.link : undefined}
+                                    href={banner.link}
                                     className={`block h-full ${!isActive && 'cursor-pointer'}`}
                                     onClick={(e) => !isActive && e.preventDefault()}
                                 >
