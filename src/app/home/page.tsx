@@ -1,12 +1,12 @@
 import Footer from "@/components/footer";
-import Header from "@/components/header";
 import Banners from "@/components/banners";
+import HeaderCategories from "@/components/header_category";
 
 export default async function HomePage() {
     return (
         <>
-            <Header />
-            <main className="min-h-screen mt-15">
+            <HeaderCategories />
+            <main className="min-h-screen mt-24">
                 <Banners/>
             </main>
             <Footer />

@@ -3,9 +3,13 @@ import { Search, Plus } from 'lucide-react';
 import LayoutTemplate from "@/components/layout";
 import Brand from "@/components/brand";
 import PrimaryBtn from "@/components/primary_btn";
-import Categories from "@/components/categories";
+import React from "react";
 
-export default function Header() {
+interface HeaderProps {
+    children: React.ReactNode;
+}
+
+export default function Header({children}: HeaderProps) {
     const handleSellClick = () => {
         console.log("Sell button clicked!");
     };
@@ -17,7 +21,7 @@ export default function Header() {
             <LayoutTemplate>
                 <div className="flex items-center justify-between h-16 gap-4">
                     {/* Logo */}
-                    <Brand />
+                    <Brand/>
                     {/* Search Bar */}
                     <div className="flex-1 max-w-2xl">
                         <div className="relative">
@@ -49,8 +53,9 @@ export default function Header() {
                         />
                     </div>
                 </div>
-                <Categories/>
             </LayoutTemplate>
+            <hr className="border-b border-gray-200"/>
+            {children}
         </header>
     );
 }

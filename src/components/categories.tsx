@@ -10,6 +10,7 @@ export default async function Categories() {
         return null;
     }
 
+    // Helper function untuk get icon component
     const getIconComponent = (iconName: string) => {
         // Capitalize first letter untuk match Lucide naming
         const formattedName = iconName.charAt(0).toUpperCase() + iconName.slice(1);
