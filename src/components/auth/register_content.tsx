@@ -1,53 +1,116 @@
+import { useState } from "react";
 import PrimaryBtn from "@/components/primary_btn";
-import {Mail} from "lucide-react";
+import { Mail } from "lucide-react";
+import { userService } from "@/services/user_service";
+import { RegisterPayload } from "@/types/user";
+import Toast from "@/components/toast";
 
-export default function RegisterContent() {
+interface RegisterContentProps {
+    onClose: () => void;
+}
+
+export default function RegisterContent({onClose}: RegisterContentProps) {
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState<string | null>(null);
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+    const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+    const handleRegister = async () => {
+        setErrorMsg(null);
+        if (loading) return;
+
+        if (!firstName || !email || !password) {
+            setErrorMsg("Please fill in all required fields.");
+            return;
+        }
+
+        const payload: RegisterPayload = {
+            first_name: firstName,
+            last_name: lastName,
+            email,
+            password,
+        };
+
+        setLoading(true);
+
+        const res = await userService.register(payload);
+
+        setLoading(false);
+
+        if (!res.success) {
+            setToast({ type: "error", message: res.data ?? "Registration failed" });
+            return;
+        }
+
+        setToast({ type: "success", message: "Registration successful!" });
+
+        setTimeout(() => {
+            onClose();
+        }, 1500);
+    };
+
     return (
         <div className="space-y-3 sm:space-y-4 p-6 sm:p-8 mt-4">
+            {toast && (
+                <Toast
+                    type={toast.type}
+                    message={toast.message}
+                    onClose={() => setToast(null)}
+                />
+            )}
+
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Register new account</h2>
+
+            {errorMsg && (
+                <p className="text-sm text-red-600 bg-red-100 border border-red-200 rounded-md p-2">
+                    {errorMsg}
+                </p>
+            )}
+
             <input
                 type="text"
-                placeholder="First Name"
-                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="First Name *"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
             />
+
             <input
                 type="text"
                 placeholder="Last Name (optional)"
-                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                value={lastName ?? ""}
+                onChange={(e) => setLastName(e.target.value || null)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
             />
+
             <input
                 type="email"
-                placeholder="Email"
-                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="Email *"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
             />
+
             <input
                 type="password"
-                placeholder="Password (min. 8 characters)"
-                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="Password (min. 8 characters) *"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
             />
-            <div className="flex items-start gap-2 pt-1">
-                <input
-                    type="checkbox"
-                    id="terms"
-                    className="mt-1 w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                />
-                <label htmlFor="terms" className="text-xs sm:text-sm text-gray-600">
-                    I agree to the{" "}
-                    <a href="#" className="text-red-600 hover:text-red-700 font-medium">
-                        Terms of Service
-                    </a>{" "}
-                    and{" "}
-                    <a href="#" className="text-red-600 hover:text-red-700 font-medium">
-                        Privacy Policy
-                    </a>
-                </label>
-            </div>
+
             <PrimaryBtn
                 icon={Mail}
                 title="Register"
                 variant="primary"
                 size="lg"
-                className="w-full justify-center text-sm sm:text-base py-2.5 sm:py-3"
+                className="w-full justify-center"
+                loading={loading}
+                onClick={handleRegister}
             />
         </div>
     );

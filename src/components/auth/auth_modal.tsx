@@ -136,7 +136,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                                     <PrimaryBtn
                                         icon={Mail}
                                         onClick={setToSignInContent}
-                                        title="Sign in / register with email"
+                                        title="Sign in with email"
                                         variant="outline"
                                         size="lg"
                                         className="w-full justify-center border-gray-300 text-gray-900 hover:bg-gray-50 text-sm sm:text-base py-2.5 sm:py-3"
@@ -182,9 +182,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                         </p>
                     </div>
                 ) : activeContent === "Sign In" ? (
-                    <SignInContent onForgotPassword={setToForgotPassword} onValidateEmail={setToValidateEmail}/>
+                    <SignInContent onClose={onClose} onForgotPassword={setToForgotPassword} onValidateEmail={setToValidateEmail}/>
                 ) : activeContent === "Sign Up" ? (
-                    <RegisterContent/>
+                    <RegisterContent onClose={onClose}/>
                 ) : activeContent === "ForgotPassword" ? (
                     <ForgotPasswordContent onClose={onClose}/>
                 ) : (
