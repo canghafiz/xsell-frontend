@@ -86,7 +86,7 @@ export default function SignInContent({ onForgotPassword, onValidateEmail, onClo
 
                 <button
                     onClick={onForgotPassword}
-                    className="text-xs sm:text-sm text-red-600 hover:text-red-700 font-medium"
+                    className="cursor-pointer text-xs sm:text-sm text-red-600 hover:text-red-700 font-medium"
                 >
                     Forgot Password?
                 </button>

@@ -1,7 +1,7 @@
 export interface AuthApiResponse {
     success: boolean;
     code: number;
-    data?: string;
+    data?: string | null;
 }
 
 export interface LoginPayload {
@@ -18,4 +18,23 @@ export interface RegisterPayload {
 
 export interface SendOtpPayload {
     email: string;
+}
+
+export interface VerifyEmailPayload {
+    email: string;
+    code: string;
+}
+
+export interface PwResetPayload {
+    email: string;
+}
+
+export interface CheckOtpPWPayload {
+    email: string;
+    code: string;
+}
+
+export interface ChangePwPayload {
+    password: string;
+    confirm_password: string;
 }

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import PrimaryBtn from "@/components/primary_btn";
 import { Mail, Lock } from "lucide-react";
+import Toast from "@/components/toast";
+import { userService } from "@/services/user_service";
 
 interface ForgotPasswordContentProps {
     onClose: () => void;
@@ -14,6 +16,9 @@ export default function ForgotPasswordContent({ onClose }: ForgotPasswordContent
     const [confirmPassword, setConfirmPassword] = useState("");
     const [canResend, setCanResend] = useState(false);
     const [countdown, setCountdown] = useState(60);
+    const [loading, setLoading] = useState(false);
+    const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+    const [tokenPw, setTokenPw] = useState<string | null>(null);
 
     // Countdown timer for OTP resend
     useEffect(() => {
@@ -30,31 +35,138 @@ export default function ForgotPasswordContent({ onClose }: ForgotPasswordContent
         }
     }, [step, countdown]);
 
-    const handleSendEmail = () => {
-        // TODO: API call to send OTP
+    const handleSendEmail = async () => {
+        if (loading) return;
+        if (!email) {
+            setToast({ type: "error", message: "Please enter your email address." });
+            return;
+        }
+
+        setLoading(true);
+        const payload = { email };
+
+        const res = await userService.sendPwReset(payload);
+        setLoading(false);
+
+        if (!res.success) {
+            setToast({
+                type: "error",
+                message: res.data ?? "Failed to send password reset OTP.",
+            });
+            return;
+        }
+
+        setToast({ type: "success", message: "OTP sent to your email!" });
         setStep("otp");
         setCountdown(60);
         setCanResend(false);
     };
 
-    const handleResendOTP = () => {
-        // TODO: API call to resend OTP
+    const handleResendOTP = async () => {
+        if (loading || !canResend) return;
+
+        setLoading(true);
+        const payload = { email };
+
+        const res = await userService.sendPwReset(payload);
+        setLoading(false);
+
+        if (!res.success) {
+            setToast({
+                type: "error",
+                message: res.data ?? "Failed to resend OTP.",
+            });
+            return;
+        }
+
+        setToast({ type: "success", message: "OTP resent successfully!" });
         setCountdown(60);
         setCanResend(false);
     };
 
-    const handleValidateOTP = () => {
-        // TODO: API call to validate OTP
+    const handleValidateOTP = async () => {
+        if (loading) return;
+        if (!otp.trim()) {
+            setToast({ type: "error", message: "Please enter the OTP." });
+            return;
+        }
+
+        setLoading(true);
+        const payload = {
+            email,
+            code: otp.trim(),
+        };
+
+        const res = await userService.checkOtpPw(payload);
+        setLoading(false);
+
+        if (!res.success) {
+            setToast({
+                type: "error",
+                message: res.data ?? "Invalid or expired OTP.",
+            });
+            return;
+        }
+
+        if (res.data) {
+            setTokenPw(res.data);
+        }
+        setToast({ type: "success", message: "OTP verified!" });
         setStep("newPassword");
     };
 
-    const handleSavePassword = () => {
-        // TODO: API call to save new password
-        onClose();
+    const handleSavePassword = async () => {
+        if (loading) return;
+        if (!newPassword || !confirmPassword) {
+            setToast({ type: "error", message: "Please fill in both password fields." });
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            setToast({ type: "error", message: "Passwords do not match." });
+            return;
+        }
+        if (newPassword.length < 8) {
+            setToast({ type: "error", message: "Password must be at least 8 characters long." });
+            return;
+        }
+        if (!tokenPw) {
+            setToast({ type: "error", message: "Session expired. Please restart the process." });
+            return;
+        }
+
+        setLoading(true);
+        const payload = {
+            password: newPassword,
+            confirm_password: confirmPassword,
+        };
+
+        const res = await userService.changePw(tokenPw, payload);
+        setLoading(false);
+
+        if (!res.success) {
+            setToast({
+                type: "error",
+                message: res.data ?? "Failed to update password.",
+            });
+            return;
+        }
+
+        setToast({ type: "success", message: "Password updated successfully!" });
+        setTimeout(() => {
+            onClose();
+        }, 1500);
     };
 
     return (
         <div className="space-y-3 sm:space-y-4 p-6 sm:p-8 mt-4">
+            {toast && (
+                <Toast
+                    type={toast.type}
+                    message={toast.message}
+                    onClose={() => setToast(null)}
+                />
+            )}
+
             {step === "email" && (
                 <>
                     <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Forgot Password</h2>
@@ -67,6 +179,7 @@ export default function ForgotPasswordContent({ onClose }: ForgotPasswordContent
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                        disabled={loading}
                     />
                     <PrimaryBtn
                         icon={Mail}
@@ -75,6 +188,7 @@ export default function ForgotPasswordContent({ onClose }: ForgotPasswordContent
                         variant="primary"
                         size="lg"
                         className="w-full justify-center text-sm sm:text-base py-2.5 sm:py-3"
+                        loading={loading}
                     />
                 </>
             )}
@@ -92,12 +206,14 @@ export default function ForgotPasswordContent({ onClose }: ForgotPasswordContent
                         onChange={(e) => setOtp(e.target.value)}
                         maxLength={6}
                         className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-center tracking-widest"
+                        disabled={loading}
                     />
                     <div className="flex items-center justify-center gap-2 text-xs sm:text-sm">
                         {canResend ? (
                             <button
                                 onClick={handleResendOTP}
                                 className="text-red-600 hover:text-red-700 font-medium"
+                                disabled={loading}
                             >
                                 Resend OTP
                             </button>
@@ -114,6 +230,8 @@ export default function ForgotPasswordContent({ onClose }: ForgotPasswordContent
                         variant="primary"
                         size="lg"
                         className="w-full justify-center text-sm sm:text-base py-2.5 sm:py-3"
+                        disabled={loading}
+                        loading={loading}
                     />
                 </>
             )}
@@ -130,6 +248,7 @@ export default function ForgotPasswordContent({ onClose }: ForgotPasswordContent
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                        disabled={loading}
                     />
                     <input
                         type="password"
@@ -137,6 +256,7 @@ export default function ForgotPasswordContent({ onClose }: ForgotPasswordContent
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                        disabled={loading}
                     />
                     {newPassword && confirmPassword && newPassword !== confirmPassword && (
                         <p className="text-xs sm:text-sm text-red-600">
@@ -150,7 +270,14 @@ export default function ForgotPasswordContent({ onClose }: ForgotPasswordContent
                         variant="primary"
                         size="lg"
                         className="w-full justify-center text-sm sm:text-base py-2.5 sm:py-3"
-                        disabled={!newPassword || !confirmPassword || newPassword !== confirmPassword}
+                        disabled={
+                            loading ||
+                            !newPassword ||
+                            !confirmPassword ||
+                            newPassword !== confirmPassword ||
+                            newPassword.length < 8
+                        }
+                        loading={loading}
                     />
                 </>
             )}

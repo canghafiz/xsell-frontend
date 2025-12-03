@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import PrimaryBtn from "@/components/primary_btn";
 import { Mail, Lock } from "lucide-react";
 import Toast from "@/components/toast";
 import { userService } from "@/services/user_service";
+import PrimaryBtn from "@/components/primary_btn";
 
 interface ValidateEmailContentProps {
     onClose: () => void;
@@ -81,10 +81,35 @@ export default function ValidateEmailContent({ onClose }: ValidateEmailContentPr
         setCanResend(false);
     };
 
-    const handleValidateOTP = () => {
-        // TODO: Implement OTP validation (e.g., call another API like userService.verifyOtp)
-        // For now, just close
-        onClose();
+    const handleValidateOTP = async () => {
+        if (loading) return;
+        if (!otp.trim()) {
+            setToast({ type: "error", message: "Please enter the verification code." });
+            return;
+        }
+
+        setLoading(true);
+        const payload = {
+            email,
+            code: otp.trim(),
+        };
+
+        const res = await userService.verifyEmail(payload);
+        setLoading(false);
+
+        if (!res.success) {
+            setToast({
+                type: "error",
+                message: res.data ?? "Invalid or expired verification code.",
+            });
+            return;
+        }
+
+        setToast({ type: "success", message: "Email verified successfully!" });
+
+        setTimeout(() => {
+            onClose();
+        }, 1500);
     };
 
     return (
@@ -160,7 +185,7 @@ export default function ValidateEmailContent({ onClose }: ValidateEmailContentPr
                         variant="primary"
                         size="lg"
                         className="w-full justify-center text-sm sm:text-base py-2.5 sm:py-3"
-                        disabled={loading}
+                        loading={loading}
                     />
                 </>
             )}
