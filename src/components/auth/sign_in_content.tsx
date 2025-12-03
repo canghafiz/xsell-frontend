@@ -79,9 +79,9 @@ export default function SignInContent({ onForgotPassword, onValidateEmail, onClo
             <div className="flex items-center justify-between">
                 <button
                     onClick={onValidateEmail}
-                    className="text-xs sm:text-sm text-gray-600 hover:text-gray-800 font-medium"
+                    className="cursor-pointer text-xs sm:text-sm text-gray-600 hover:text-gray-800 font-medium"
                 >
-                    Validate Email
+                    Verify Email
                 </button>
 
                 <button
