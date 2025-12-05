@@ -4,14 +4,17 @@ import LayoutTemplate from "@/components/layout";
 import Brand from "@/components/brand";
 import PrimaryBtn from "@/components/primary_btn";
 import AuthModal from "@/components/auth/auth_modal";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 
 interface HeaderProps {
     children: React.ReactNode;
 }
 
-export default function Header({children}: HeaderProps) {
+export default function Header({ children }: HeaderProps) {
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [searchValue, setSearchValue] = useState("");
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     const handleSellClick = () => {
         console.log("Sell button clicked!");
@@ -19,92 +22,107 @@ export default function Header({children}: HeaderProps) {
 
     const handleAuthClick = () => {
         setShowAuthModal(true);
-    }
+    };
 
-    const appName = process.env.NEXT_PUBLIC_APP_NAME
+    const appName = process.env.NEXT_PUBLIC_APP_NAME;
+
+    const handlePlaceholderClick = () => {
+        searchInputRef.current?.focus();
+    };
 
     return (
         <>
             <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
                 <LayoutTemplate>
-                    {/* Desktop Layout */}
+                    {/* Desktop */}
                     <div className="hidden md:flex items-center justify-between h-16 gap-4">
-                        {/* Logo */}
-                        <Brand/>
-
-                        {/* Search Bar */}
-                        <div className="flex-1 max-w-2xl">
+                        <Brand />
+                        <div className="flex-1 max-w-2xl relative">
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Search className="h-5 w-5 text-gray-400"/>
+                                    <Search className="h-5 w-5 text-gray-400" />
                                 </div>
                                 <input
+                                    ref={searchInputRef}
                                     type="text"
-                                    placeholder="Find Car, Phone, and other ..."
-                                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                                    value={searchValue}
+                                    onChange={(e) => setSearchValue(e.target.value)}
+                                    onFocus={() => setIsSearchFocused(true)}
+                                    onBlur={() => setIsSearchFocused(false)}
+                                    aria-label="Search for items like car, phone, and more"
+                                    className="mr-2 block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
                                 />
+                                {(!searchValue && !isSearchFocused) && (
+                                    <div
+                                        className="animated-placeholder"
+                                        onClick={handlePlaceholderClick}
+                                    >
+                                        Find Car, Phone, and other ...
+                                    </div>
+                                )}
                             </div>
                         </div>
-
-                        {/* SignIn/SignUp & Sell Btn */}
                         <div className="flex items-center gap-3">
-                            <button
-                                onClick={handleAuthClick}
-                                className="cursor-pointer text-gray-700 hover:text-gray-900 font-medium text-sm whitespace-nowrap">
+                            <button onClick={handleAuthClick} className="cursor-pointer text-gray-700 hover:text-gray-900 font-medium text-sm">
                                 SignIn/SignUp
                             </button>
-
                             <PrimaryBtn
                                 icon={Plus}
                                 title="Sell"
                                 onClick={handleSellClick}
-                                ariaLabel={"Start selling your items on " + appName}
+                                ariaLabel={`Start selling your items on ${appName}`}
                             />
                         </div>
                     </div>
 
-                    {/* Mobile Layout */}
+                    {/* Mobile */}
                     <div className="md:hidden">
-                        {/* Top Row: Logo, SignIn, Sell */}
                         <div className="flex items-center justify-between h-16 gap-3">
-                            <Brand/>
-
+                            <Brand />
                             <div className="flex items-center gap-2">
-                                <button
-                                    onClick={handleAuthClick}
-                                    className="cursor-pointer text-gray-700 hover:text-gray-900 font-medium text-sm whitespace-nowrap">
+                                <button onClick={handleAuthClick} className="text-gray-700 hover:text-gray-900 font-medium text-sm">
                                     SignIn/SignUp
                                 </button>
-
                                 <PrimaryBtn
                                     icon={Plus}
                                     title="Sell"
                                     onClick={handleSellClick}
-                                    ariaLabel={"Start selling your items on " + appName}
+                                    ariaLabel={`Start selling your items on ${appName}`}
                                 />
                             </div>
                         </div>
 
-                        {/* Bottom Row: Search Bar */}
                         <div className="pb-3">
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Search className="h-5 w-5 text-gray-400"/>
+                                    <Search className="h-5 w-5 text-gray-400" />
                                 </div>
                                 <input
+                                    ref={searchInputRef}
                                     type="text"
-                                    placeholder="Find Car, Phone, and other ..."
-                                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                                    value={searchValue}
+                                    onChange={(e) => setSearchValue(e.target.value)}
+                                    onFocus={() => setIsSearchFocused(true)}
+                                    onBlur={() => setIsSearchFocused(false)}
+                                    className="block w-full pl-10 pr-3 py-2 mr-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                                    aria-label="Search for items like car, phone, and more"
                                 />
+                                {(!searchValue && !isSearchFocused) && (
+                                    <div
+                                        className="animated-placeholder"
+                                        onClick={handlePlaceholderClick}
+                                    >
+                                        Find Car, Phone, and other ...
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
                 </LayoutTemplate>
-                <hr className="border-b border-gray-200"/>
+                <hr className="border-b border-gray-200" />
                 {children}
             </header>
 
-            {/* Auth Modal */}
             {showAuthModal && (
                 <AuthModal
                     isOpen={showAuthModal}

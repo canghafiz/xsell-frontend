@@ -6,7 +6,7 @@ interface LayoutProps {
 
 export default function LayoutTemplate({ children }: LayoutProps) {
     return (
-        <div className="max-w-8xl mx-auto px-4 sm:px-4 lg:px-6">
+        <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6">
             {children}
         </div>
     )

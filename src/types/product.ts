@@ -1,3 +1,5 @@
+import {CategoryItem} from "@/types/category";
+
 export interface PageSectionItem {
     page_key: string;
     data: ProductPageSection[];
@@ -13,6 +15,7 @@ export interface ProductPageSection {
 
 export interface ProductItem {
     product_id: number;
+    product_slug: string;
     title: string;
     price: number;
     condition: string;
@@ -45,4 +48,34 @@ export interface ProductPageApiResponse {
     success: boolean;
     code: number;
     data?: PageSectionItem | null;
+}
+
+export interface ProductSpec {
+    spec_id: number;
+    name: string;
+    value: string;
+    category: string;
+}
+
+export interface ProductDetailItem {
+    product_id: number;
+    product_slug: string;
+    title: string;
+    description: string;
+    price: number;
+    condition: string;
+    status: string;
+    category: CategoryItem;
+    images: ProductImage[];
+    specs: ProductSpec[];
+    location: ProductLocation;
+    listing: ProductListing;
+    created_at: string;
+}
+
+export interface ProductDetailApiResponse {
+    success: boolean;
+    code: number;
+    data?: ProductDetailItem | null;
+    error?: string;
 }

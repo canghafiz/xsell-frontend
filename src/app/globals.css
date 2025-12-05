@@ -71,3 +71,50 @@ body {
 .animate-slide-in {
   animation: slide-in 0.3s ease-out;
 }
+
+
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+}
+
+/* Sembunyikan scrollbar tapi tetap bisa scroll */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+}
+
+/* Typing effect yang benar-benar jalan */
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 23ch;
+  }
+}
+
+.animated-placeholder {
+  position: absolute;
+  top: 50%;
+  left: 32px;
+  transform: translateY(-50%);
+  font-family: Inter, sans-serif;
+  font-size: 0.875rem;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  border-right: 2px solid #6b7280;
+  animation: typing 4.5s steps(23, end) infinite, blink 1s infinite;
+  animation-delay: 0.3s, 0.3s;
+  width: 0;
+  opacity: 1;
+  pointer-events: auto;
+  cursor: text;
+}
