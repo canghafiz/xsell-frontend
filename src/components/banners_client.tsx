@@ -89,10 +89,10 @@ export default function BannersClient({ initialBanners, imagePrefixUrl }: Banner
                                 className={`
                                     relative transition-all duration-700 ease-out
                                     ${isActive
-                                    ? 'w-[85%] md:w-[55%] z-10'
+                                    ? 'w-full md:w-[55%] z-10'
                                     : isNext
-                                        ? 'w-[85%] md:w-[55%] z-5'
-                                        : 'w-[85%] md:w-[55%] z-0 hidden md:block'
+                                        ? 'hidden md:block md:w-[55%] z-5'
+                                        : 'hidden md:block md:w-[55%] z-0'
                                 }
                                 `}
                                 style={{ aspectRatio: '16/9' }}
@@ -112,7 +112,7 @@ export default function BannersClient({ initialBanners, imagePrefixUrl }: Banner
                                             unoptimized
                                             priority={idx === 0}
                                             loading={idx === 0 ? 'eager' : 'lazy'}
-                                            sizes="(max-width: 768px) 85vw, 55vw"
+                                            sizes="(max-width: 768px) 100vw, 55vw"
                                         />
 
                                         {/* Overlay gradient for inactive banners */}

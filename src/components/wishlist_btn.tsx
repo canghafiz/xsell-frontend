@@ -27,7 +27,7 @@ export default function WishlistBtn({ productId, initialWishlist = false }: Wish
             aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
         >
             <Heart
-                size={14}
+                size={24}
                 className={isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-600'}
             />
         </button>

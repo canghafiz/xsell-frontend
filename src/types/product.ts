@@ -52,6 +52,7 @@ export interface ProductPageApiResponse {
 
 export interface ProductSpec {
     spec_id: number;
+    spec_type_title: string;
     name: string;
     value: string;
     category: string;
