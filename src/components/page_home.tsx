@@ -1,7 +1,7 @@
 import pageService from "@/services/page_service";
 import LayoutTemplate from "@/components/layout";
-import ProductCard from "@/components/product_card";
 import HeroSection from "@/components/hero_section";
+import ScrollableSectionClient from "@/components/scrollable_section_client";
 
 export default async function PageHome() {
     const params = {
@@ -21,7 +21,7 @@ export default async function PageHome() {
 
     return (
         <div className="min-h-screen bg-white">
-            {/* ✅ Hero sebagai komponen client */}
+            {/* Hero */}
             <HeroSection />
 
             {/* Content */}
@@ -43,18 +43,10 @@ export default async function PageHome() {
                                 </button>
                             </div>
 
-                            {/* Horizontal Scroll */}
-                            <div className="px-2">
-                                <div className="flex overflow-x-auto space-x-4 pb-2 hide-scrollbar">
-                                    {section.products.map((product) => (
-                                        <ProductCard
-                                            key={product.product_id}
-                                            product={product}
-                                            imagePrefixUrl={imagePrefixUrl}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
+                            <ScrollableSectionClient
+                                products={section.products}
+                                imagePrefixUrl={imagePrefixUrl}
+                            />
                         </LayoutTemplate>
                     </section>
                 ))}

@@ -24,7 +24,7 @@ export default function ProductDetail() {
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
     const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
 
-    // ✅ Keyboard listener
+    // Keyboard listener for gallery navigation
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (!isGalleryOpen || !product) return;
@@ -145,6 +145,8 @@ export default function ProductDetail() {
         );
     }
 
+    // Get primary category from array for SEO
+    const primaryCategory = product.category && product.category.length > 0 ? product.category[0] : null;
     const primaryImage = product.images.find((img) => img.is_primary);
     const mainImage = product.images[mainImageIndex] || primaryImage || product.images[0];
     const productUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/product/${Array.isArray(slugParam) ? slugParam[0] : slugParam}`;
@@ -182,12 +184,12 @@ export default function ProductDetail() {
 
     return (
         <>
-            {product && (
+            {product && primaryCategory && (
                 <Head>
-                    <title>{`${product.title} - Rp${product.price.toLocaleString("id-ID")} | ${product.category.category_name}`}</title>
+                    <title>{`${product.title} - Rp${product.price.toLocaleString("id-ID")} | ${primaryCategory.category_name}`}</title>
                     <meta name="title" content={`${product.title} - Rp${product.price.toLocaleString("id-ID")}`} />
                     <meta name="description" content={product.description.substring(0, 160)} />
-                    <meta name="keywords" content={`${product.title}, ${product.category.category_name}, ${product.condition}, ${product.specs.map(s => s.value).join(", ")}`} />
+                    <meta name="keywords" content={`${product.title}, ${primaryCategory.category_name}, ${product.condition}, ${product.specs.map(s => s.value).join(", ")}`} />
                     <meta name="author" content={`${product.listing.first_name} ${product.listing.last_name || ""}`} />
                     <link rel="canonical" href={productUrl} />
 
@@ -202,30 +204,49 @@ export default function ProductDetail() {
                     <meta property="product:condition" content={product.condition.toLowerCase()} />
                     <meta property="product:availability" content={product.status === "Available" ? "in stock" : "out of stock"} />
 
-                    <meta name="twitter:card" content="summary_large_image" />
-                    <meta name="twitter:url" content={productUrl} />
-                    <meta name="twitter:title" content={`${product.title} - Rp${product.price.toLocaleString("id-ID")}`} />
-                    <meta name="twitter:description" content={product.description.substring(0, 160)} />
-                    <meta name="twitter:image" content={mainImage ? getImageUrl(mainImage.url) : "/placeholder-image.png"} />
-
-                    <meta name="robots" content="index, follow" />
                     <meta name="language" content="Indonesian" />
                     <meta name="revisit-after" content="7 days" />
                 </Head>
             )}
             <LayoutTemplate>
-                <div className="flex gap-2 justify-end mb-2">
-                    <WishlistBtn productId={product.product_id} />
-                    <ShareButton url={productUrl} />
+                {/* Header with back button and action buttons */}
+                <div className="flex items-center justify-between mb-2">
+                    <button
+                        onClick={() => window.history.back()}
+                        className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center gap-1"
+                        aria-label="Go back"
+                    >
+                        ← Back
+                    </button>
+                    <div className="flex gap-2">
+                        <WishlistBtn productId={product.product_id} />
+                        <ShareButton url={productUrl} />
+                    </div>
                 </div>
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden my-2">
+
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden my-4 md:my-8">
+                    {/* Product header with categories and price */}
                     <div className="p-4 border-b border-gray-100">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>
-                                <span className="inline-block px-2 py-0.5 bg-red-100 text-red-800 text-xs font-medium rounded-full">
-                                    {product.category.category_name}
-                                </span>
-                                <h1 className="text-lg md:text-xl font-bold text-gray-900 mt-1.5">
+                                {/* Display all categories as badges */}
+                                <div className="flex flex-wrap gap-1.5 mb-2">
+                                    {product.category && product.category.length > 0 ? (
+                                        product.category.map((cat) => (
+                                            <span
+                                                key={cat.category_id}
+                                                className="inline-block px-2 py-0.5 bg-red-100 text-red-800 text-xs font-medium rounded-full"
+                                            >
+                                                {cat.category_name}
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">
+                                            Uncategorized
+                                        </span>
+                                    )}
+                                </div>
+                                <h1 className="text-lg md:text-xl font-bold text-gray-900">
                                     {product.title}
                                 </h1>
                             </div>
@@ -241,7 +262,7 @@ export default function ProductDetail() {
                     </div>
 
                     <div className="md:flex">
-                        {/* Gambar */}
+                        {/* Product images section */}
                         <div className="md:w-1/2 p-4 border-r border-gray-100">
                             {mainImage ? (
                                 <div
@@ -286,9 +307,10 @@ export default function ProductDetail() {
                             )}
                         </div>
 
-                        {/* Detail */}
+                        {/* Product details section */}
                         <div className="md:w-1/2 p-4">
                             <div className="space-y-3">
+                                {/* Seller information */}
                                 <div className="flex items-center text-gray-600 text-sm">
                                     {product.listing.photo_profile ? (
                                         <Image
@@ -318,11 +340,17 @@ export default function ProductDetail() {
                                     </span>
                                 </div>
 
+                                {/* Location information */}
                                 <div className="flex items-center text-gray-600 text-sm">
                                     <MapPin className="h-3.5 w-3.5 mr-1.5" />
-                                    <span>Location info (add city/province later)</span>
+                                    <span>
+                                        {product.location?.latitude && product.location?.longitude
+                                            ? `${product.location.latitude.toFixed(4)}, ${product.location.longitude.toFixed(4)}`
+                                            : "Location not available"}
+                                    </span>
                                 </div>
 
+                                {/* Product condition and status badges */}
                                 <div className="flex flex-wrap gap-2 pt-1.5">
                                     <span
                                         className={`px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -346,6 +374,7 @@ export default function ProductDetail() {
                                     </span>
                                 </div>
 
+                                {/* Tabs for description and specifications */}
                                 <div className="pt-4 border-t border-gray-200">
                                     <div className="flex gap-4 border-b border-gray-200">
                                         <button
@@ -370,6 +399,7 @@ export default function ProductDetail() {
                                         </button>
                                     </div>
 
+                                    {/* Tab content */}
                                     <div className="pt-4">
                                         {activeTab === "description" ? (
                                             <div>
@@ -414,13 +444,13 @@ export default function ProductDetail() {
                     </div>
                 </div>
 
-                {/* Gallery */}
+                {/* Gallery modal for full screen image viewing */}
                 {isGalleryOpen && (
                     <div
-                        className="fixed inset-0 z-50 bg-black/85"
+                        className="fixed inset-0 z-50 bg-black/95"
                         onClick={() => setIsGalleryOpen(false)}
                     >
-                        {/* Close Button (X) */}
+                        {/* Close button */}
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -432,7 +462,7 @@ export default function ProductDetail() {
                             <X size={32} />
                         </button>
 
-                        {/* Navigation Left - Full Height */}
+                        {/* Previous navigation button */}
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -444,7 +474,7 @@ export default function ProductDetail() {
                             <ChevronLeft size={60} strokeWidth={1.5} />
                         </button>
 
-                        {/* Navigation Right - Full Height */}
+                        {/* Next navigation button */}
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -456,10 +486,10 @@ export default function ProductDetail() {
                             <ChevronRight size={60} strokeWidth={1.5} />
                         </button>
 
-                        {/* Main Image Container - Centered Box */}
+                        {/* Main image display */}
                         <div className="absolute inset-0 bottom-24 flex items-center justify-center p-8">
                             <div
-                                className="relative rounded-lg shadow-2xl w-full max-w-5xl"
+                                className="relative bg-white rounded-lg shadow-2xl w-full max-w-5xl"
                                 onClick={(e) => e.stopPropagation()}
                                 style={{ height: '70vh' }}
                             >
@@ -471,12 +501,17 @@ export default function ProductDetail() {
                                     unoptimized
                                     priority
                                 />
+
+                                {/* Image counter */}
+                                <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1.5 rounded text-sm font-medium">
+                                    {currentGalleryIndex + 1}/{product.images.length}
+                                </div>
                             </div>
                         </div>
 
-                        {/* Thumbnail Strip at Bottom */}
+                        {/* Thumbnail navigation strip */}
                         <div
-                            className="cursor-pointer absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black to-transparent flex items-center justify-center px-4"
+                            className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black to-transparent flex items-center justify-center px-4"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex gap-2 overflow-x-auto max-w-full py-2 px-2">
@@ -487,10 +522,10 @@ export default function ProductDetail() {
                                             e.stopPropagation();
                                             setCurrentGalleryIndex(idx);
                                         }}
-                                        className={`flex-shrink-0 w-16 h-16 rounded overflow-hidden relative border-2 transition-all ${
+                                        className={`cursor-pointer flex-shrink-0 w-16 h-16 rounded overflow-hidden relative border-2 transition-all ${
                                             idx === currentGalleryIndex
                                                 ? "border-red-500 scale-110"
-                                                : "border-transparent opacity-60 hover:opacity-100 hover:border-r-red-500/50"
+                                                : "border-red-500/50 opacity-60 hover:opacity-100"
                                         }`}
                                     >
                                         <Image

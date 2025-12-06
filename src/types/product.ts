@@ -66,7 +66,7 @@ export interface ProductDetailItem {
     price: number;
     condition: string;
     status: string;
-    category: CategoryItem;
+    category: CategoryItem[];
     images: ProductImage[];
     specs: ProductSpec[];
     location: ProductLocation;

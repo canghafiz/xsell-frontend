@@ -20,12 +20,6 @@ export default function BannersClient({ initialBanners, imagePrefixUrl }: Banner
         }
     }, [banners.length]);
 
-    const prevSlide = useCallback(() => {
-        if (banners.length > 0) {
-            setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
-        }
-    }, [banners.length]);
-
     const goToSlide = (index: number) => {
         setCurrentIndex(index);
     };
@@ -59,25 +53,8 @@ export default function BannersClient({ initialBanners, imagePrefixUrl }: Banner
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            {/* Navigation Button - Previous */}
-            <button
-                onClick={prevSlide}
-                className="absolute left-2 md:left-8 top-1/2 -translate-y-1/2 z-20 bg-white rounded-full p-2 md:p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 group disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Previous banner"
-                disabled={banners.length <= 1}
-            >
-                <svg
-                    className="w-5 h-5 md:w-6 md:h-6 text-gray-700 group-hover:text-red-600 transition-colors"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-                </svg>
-            </button>
-
             {/* Banner Container */}
-            <div className="relative max-w-7xl mx-auto overflow-hidden py-2">
+            <div className="relative mx-auto overflow-hidden py-2">
                 <div className="flex items-center justify-center gap-3 md:gap-4 h-full">
                     {visibleBanners.map((banner, idx) => {
                         const isActive = idx === 0;
@@ -126,23 +103,6 @@ export default function BannersClient({ initialBanners, imagePrefixUrl }: Banner
                     })}
                 </div>
             </div>
-
-            {/* Navigation Button - Next */}
-            <button
-                onClick={nextSlide}
-                className="absolute right-2 md:right-8 top-1/2 -translate-y-1/2 z-20 bg-white rounded-full p-2 md:p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 group disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Next banner"
-                disabled={banners.length <= 1}
-            >
-                <svg
-                    className="w-5 h-5 md:w-6 md:h-6 text-gray-700 group-hover:text-red-600 transition-colors"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
 
             {/* Dots Indicator */}
             <div className="flex justify-center gap-3 mt-6">
