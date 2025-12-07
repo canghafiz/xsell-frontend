@@ -2,26 +2,48 @@ import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
+
     const slug = searchParams.get("slug");
+    const exceptId = searchParams.get("except_id");
 
-    if (!slug) {
-        return NextResponse.json({ error: "Missing 'slug' query parameter" }, { status: 400 });
+    if (!slug || slug.trim() === "") {
+        return NextResponse.json(
+            { error: "Missing 'slug' query parameter" },
+            { status: 400 }
+        );
     }
 
-    const BE_API = process.env.BE_API; // e.g. "http://127.0.0.1:8002/api/v1/"
+    const BE_API = process.env.BE_API;
     if (!BE_API) {
-        return NextResponse.json({ error: "BE_API not configured" }, { status: 500 });
+        return NextResponse.json(
+            { error: "Backend API (BE_API) is not configured" },
+            { status: 500 }
+        );
     }
 
-    // Ambil semua query params, lalu hapus `slug`
-    const backendParams = new URLSearchParams(searchParams.toString());
-    backendParams.delete("slug"); // jangan kirim `slug` ke backend
+    const baseUrl = BE_API.endsWith('/') ? BE_API : BE_API + '/';
 
-    const queryString = backendParams.toString();
-    const backendUrl = `${BE_API}member/page/${slug}${queryString ? `?${queryString}` : ""}`;
+    let backendPath = `member/page/${encodeURIComponent(slug.trim())}`;
+    if (exceptId && exceptId.trim() !== "") {
+        if (!/^\d+$/.test(exceptId.trim())) {
+            return NextResponse.json(
+                { error: "'except_id' must be a positive integer" },
+                { status: 400 }
+            );
+        }
+        backendPath += `/${encodeURIComponent(exceptId.trim())}`;
+    }
+
+    const backendUrl = new URL(backendPath, baseUrl);
+
+    for (const [key, value] of searchParams.entries()) {
+        if (key !== "slug" && key !== "except_id") {
+            backendUrl.searchParams.set(key, value);
+        }
+    }
 
     try {
-        const backendRes = await fetch(backendUrl, {
+        const backendRes = await fetch(backendUrl.toString(), {
             method: "GET",
             headers: { "Accept": "application/json" },
         });
@@ -34,6 +56,10 @@ export async function GET(request: Request) {
         });
     } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
-        return NextResponse.json({ error: msg }, { status: 500 });
+        console.error("Page API proxy error:", msg);
+        return NextResponse.json(
+            { error: "Failed to fetch from backend", details: msg },
+            { status: 500 }
+        );
     }
 }

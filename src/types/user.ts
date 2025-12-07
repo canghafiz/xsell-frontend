@@ -38,3 +38,12 @@ export interface ChangePwPayload {
     password: string;
     confirm_password: string;
 }
+
+export interface User{
+    user_id: number;
+    email: string;
+    role: string;
+    first_name: string;
+    last_name: string;
+    photo_profile: string;
+}

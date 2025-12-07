@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 import WishlistBtn from "@/components/wishlist_btn";
 import Link from "next/link";
+import { formatCurrency } from "@/utils/currency";
 
 interface ProductCardProps {
     product: ProductItem;
@@ -13,6 +14,9 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, imagePrefixUrl }: ProductCardProps) {
     const [isHovered, setIsHovered] = useState(false);
+
+    // Format price dynamically
+    const formattedPrice = formatCurrency(product.price);
 
     return (
         <Link href={`/product/${product.product_slug}`} passHref>
@@ -53,14 +57,14 @@ export default function ProductCard({ product, imagePrefixUrl }: ProductCardProp
 
                     {/* Condition badge */}
                     <div className="absolute top-2 left-2">
-                    <span className="bg-red-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-medium">
-                        {product.condition}
-                    </span>
+                        <span className="bg-red-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-medium">
+                            {product.condition}
+                        </span>
                     </div>
 
-                    {/* ❤️ Wishlist button */}
+                    {/* Wishlist button */}
                     <div className="absolute top-2 right-2">
-                        <WishlistBtn productId={product.product_id}/>
+                        <WishlistBtn productId={product.product_id} />
                     </div>
                 </div>
 
@@ -70,12 +74,13 @@ export default function ProductCard({ product, imagePrefixUrl }: ProductCardProp
                         {product.title}
                     </h3>
                     <div className="flex justify-between items-center mt-1">
-                    <span className="text-[9px] text-gray-600">
-                        By {product.listing.first_name}
-                    </span>
+                        <span className="text-[9px] text-gray-600">
+                            By {product.listing.first_name}
+                        </span>
+                        {/* Dynamic currency formatting */}
                         <span className="font-bold text-sm text-gray-900">
-                        Rp{product.price.toLocaleString()}
-                    </span>
+                            {formattedPrice}
+                        </span>
                     </div>
                 </div>
             </div>

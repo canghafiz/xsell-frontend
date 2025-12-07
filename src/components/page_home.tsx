@@ -5,14 +5,7 @@ import ScrollableSectionClient from "@/components/scrollable_section_client";
 
 export default async function PageHome() {
     const params = {
-        newly_listed: 10,
-        trending: 10,
-        like_new_items: 10,
-        good_condition: 10,
-        used_electronics: 10,
-        home_items: 10,
-        fashion_items: 10,
-        editor_pick: 10,
+        limit: 100
     };
 
     const pages = await pageService.getPage("home", params);

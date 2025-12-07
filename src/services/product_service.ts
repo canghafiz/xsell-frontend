@@ -1,4 +1,3 @@
-// services/productService.ts
 import { ProductDetailApiResponse } from "@/types/product";
 
 class ProductService {
@@ -11,7 +10,7 @@ class ProductService {
             };
         }
 
-        const baseUrl = process.env.SITE_URL || "http://localhost:3000";
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
         const url = `${baseUrl}/api/product/${encodeURIComponent(slug)}`;
 
         try {

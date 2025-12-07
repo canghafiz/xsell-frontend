@@ -1,33 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import Image from "next/image";
-import { ProductDetailItem, ProductDetailApiResponse } from "@/types/product";
-import { productService } from "@/services/product_service";
-import { Loader, AlertCircle, MapPin, User, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { ProductDetailItem } from "@/types/product";
+import { MapPin, User, X, ChevronLeft, ChevronRight } from "lucide-react";
 import LayoutTemplate from "@/components/layout";
 import { useProductSEO } from "@/hooks/userProductSEO";
 import Head from "next/head";
 import WishlistBtn from "@/components/wishlist_btn";
 import ShareButton from "@/components/share_btn";
+import { formatCurrency } from "@/utils/currency";
 
-export default function ProductDetail() {
-    const params = useParams();
-    const slugParam = params?.slug;
+interface ProductDetailProps {
+    product: ProductDetailItem;
+    slug: string;
+}
 
-    const [product, setProduct] = useState<ProductDetailItem | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+export default function ProductDetail({ product, slug }: ProductDetailProps) {
     const [mainImageIndex, setMainImageIndex] = useState(0);
     const [activeTab, setActiveTab] = useState<"description" | "specification">("description");
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
     const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
 
-    // Keyboard listener for gallery navigation
+    // Keyboard navigation for gallery
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (!isGalleryOpen || !product) return;
+            if (!isGalleryOpen) return;
 
             if (e.key === "Escape") {
                 setIsGalleryOpen(false);
@@ -42,120 +40,20 @@ export default function ProductDetail() {
             }
         };
 
-        if (isGalleryOpen) {
-            window.addEventListener("keydown", handleKeyDown);
-            return () => window.removeEventListener("keydown", handleKeyDown);
-        }
-    }, [isGalleryOpen, product]);
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isGalleryOpen, product.images.length]);
 
-    // Update SEO when product is loaded
-    useProductSEO(product, slugParam as string, mainImageIndex);
+    // Update SEO metadata
+    useProductSEO(product, slug, mainImageIndex);
 
-    useEffect(() => {
-        if (slugParam === undefined) return;
-
-        let slug: string | null = null;
-        if (typeof slugParam === "string") {
-            slug = slugParam.trim();
-        } else if (Array.isArray(slugParam) && slugParam.length > 0) {
-            slug = slugParam[0].trim();
-        }
-
-        if (!slug) {
-            setError("Invalid product URL");
-            setLoading(false);
-            return;
-        }
-
-        const fetchProduct = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const res: ProductDetailApiResponse = await productService.getDetailBySlug(slug!);
-                if (res.success && res.data) {
-                    setProduct(res.data);
-                    setMainImageIndex(0);
-                } else {
-                    setError(res.error || "Product not found");
-                }
-            } catch (err) {
-                setError("Failed to load product");
-                console.error("Fetch error:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchProduct();
-    }, [slugParam]);
-
-    if (slugParam === undefined) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Loader className="h-6 w-6 animate-spin text-gray-500" />
-            </div>
-        );
-    }
-
-    if (loading) {
-        return (
-            <div className="max-w-6xl mx-auto px-4 py-6">
-                <div className="animate-pulse space-y-4">
-                    <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-3">
-                            <div className="h-80 bg-gray-200 rounded-lg"></div>
-                            <div className="flex gap-1.5 overflow-x-auto pb-1.5">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={i} className="h-12 w-12 bg-gray-200 rounded shrink-0"></div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="space-y-3">
-                            <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                            <div className="h-6 bg-red-200 rounded w-1/4"></div>
-                            <div className="h-3 bg-gray-200 rounded w-full"></div>
-                            <div className="h-3 bg-gray-200 rounded w-4/5"></div>
-                            <div className="pt-3 space-y-2">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={i} className="flex justify-between">
-                                        <div className="h-3 bg-gray-200 rounded w-1/3"></div>
-                                        <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (error || !product) {
-        return (
-            <div className="max-w-lg mx-auto px-4 py-10 text-center">
-                <AlertCircle className="h-10 w-10 text-red-500 mx-auto" />
-                <h2 className="text-base font-semibold text-gray-800 mt-3">
-                    {error || "Product not found"}
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                    Please check the URL or try again later.
-                </p>
-            </div>
-        );
-    }
-
-    // Get primary category from array for SEO
-    const primaryCategory = product.category && product.category.length > 0 ? product.category[0] : null;
-    const primaryImage = product.images.find((img) => img.is_primary);
-    const mainImage = product.images[mainImageIndex] || primaryImage || product.images[0];
-    const productUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/product/${Array.isArray(slugParam) ? slugParam[0] : slugParam}`;
-
+    // Helper: get full image URL
     const getImageUrl = (url: string) => {
         if (url.startsWith("http")) return url;
         return `${process.env.NEXT_PUBLIC_STORAGE_URL}${url}`;
     };
 
+    // Group specs by spec_type_title
     const groupedSpecs: { [key: string]: typeof product.specs } = {};
     product.specs.forEach((spec) => {
         const group = spec.spec_type_title;
@@ -165,6 +63,7 @@ export default function ProductDetail() {
         groupedSpecs[group].push(spec);
     });
 
+    // Gallery functions
     const openGallery = (index: number) => {
         setCurrentGalleryIndex(index);
         setIsGalleryOpen(true);
@@ -182,12 +81,22 @@ export default function ProductDetail() {
         );
     };
 
+    // Currency formatting
+    const formattedPrice = formatCurrency(product.price);
+    const currencyCode = (process.env.NEXT_PUBLIC_CURRENCY || "IDR").toUpperCase();
+
+    // Derived values
+    const primaryCategory = product.category && product.category.length > 0 ? product.category[0] : null;
+    const primaryImage = product.images.find((img) => img.is_primary);
+    const mainImage = product.images[mainImageIndex] || primaryImage || product.images[0];
+    const productUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/product/${slug}`;
+
     return (
         <>
-            {product && primaryCategory && (
+            {primaryCategory && (
                 <Head>
-                    <title>{`${product.title} - Rp${product.price.toLocaleString("id-ID")} | ${primaryCategory.category_name}`}</title>
-                    <meta name="title" content={`${product.title} - Rp${product.price.toLocaleString("id-ID")}`} />
+                    <title>{`${product.title} - ${formattedPrice} | ${primaryCategory.category_name}`}</title>
+                    <meta name="title" content={`${product.title} - ${formattedPrice}`} />
                     <meta name="description" content={product.description.substring(0, 160)} />
                     <meta name="keywords" content={`${product.title}, ${primaryCategory.category_name}, ${product.condition}, ${product.specs.map(s => s.value).join(", ")}`} />
                     <meta name="author" content={`${product.listing.first_name} ${product.listing.last_name || ""}`} />
@@ -195,12 +104,12 @@ export default function ProductDetail() {
 
                     <meta property="og:type" content="product" />
                     <meta property="og:url" content={productUrl} />
-                    <meta property="og:title" content={`${product.title} - Rp${product.price.toLocaleString("id-ID")}`} />
+                    <meta property="og:title" content={`${product.title} - ${formattedPrice}`} />
                     <meta property="og:description" content={product.description.substring(0, 160)} />
                     <meta property="og:image" content={mainImage ? getImageUrl(mainImage.url) : "/placeholder-image.png"} />
                     <meta property="og:site_name" content="Your Site Name" />
                     <meta property="product:price:amount" content={product.price.toString()} />
-                    <meta property="product:price:currency" content="IDR" />
+                    <meta property="product:price:currency" content={currencyCode} />
                     <meta property="product:condition" content={product.condition.toLowerCase()} />
                     <meta property="product:availability" content={product.status === "Available" ? "in stock" : "out of stock"} />
 
@@ -237,13 +146,13 @@ export default function ProductDetail() {
                                                 key={cat.category_id}
                                                 className="inline-block px-2 py-0.5 bg-red-100 text-red-800 text-xs font-medium rounded-full"
                                             >
-                                                {cat.category_name}
-                                            </span>
+                        {cat.category_name}
+                      </span>
                                         ))
                                     ) : (
                                         <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">
-                                            Uncategorized
-                                        </span>
+                      Uncategorized
+                    </span>
                                     )}
                                 </div>
                                 <h1 className="text-lg md:text-xl font-bold text-gray-900">
@@ -253,7 +162,7 @@ export default function ProductDetail() {
                             <div className="flex items-center gap-1.5">
                                 <div className="text-right">
                                     <p className="text-lg md:text-xl font-extrabold text-red-600">
-                                        Rp{product.price.toLocaleString("id-ID")}
+                                        {formattedPrice}
                                     </p>
                                     <p className="text-xs text-gray-500 mt-0.5">Price</p>
                                 </div>
@@ -336,33 +245,33 @@ export default function ProductDetail() {
                                             alert(`View profile of user ID: ${product.listing.user_id}`);
                                         }}
                                     >
-                                        {product.listing.first_name} {product.listing.last_name || ""}
-                                    </span>
+                    {product.listing.first_name} {product.listing.last_name || ""}
+                  </span>
                                 </div>
 
                                 {/* Location information */}
                                 <div className="flex items-center text-gray-600 text-sm">
                                     <MapPin className="h-3.5 w-3.5 mr-1.5" />
                                     <span>
-                                        {product.location?.latitude && product.location?.longitude
-                                            ? `${product.location.latitude.toFixed(4)}, ${product.location.longitude.toFixed(4)}`
-                                            : "Location not available"}
-                                    </span>
+                    {product.location?.latitude && product.location?.longitude
+                        ? `${product.location.latitude.toFixed(4)}, ${product.location.longitude.toFixed(4)}`
+                        : "Location not available"}
+                  </span>
                                 </div>
 
                                 {/* Product condition and status badges */}
                                 <div className="flex flex-wrap gap-2 pt-1.5">
-                                    <span
-                                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                            product.condition === "New"
-                                                ? "bg-green-100 text-green-800"
-                                                : product.condition === "Like New"
-                                                    ? "bg-red-100 text-red-800"
-                                                    : "bg-yellow-100 text-yellow-800"
-                                        }`}
-                                    >
-                                        {product.condition}
-                                    </span>
+                  <span
+                      className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          product.condition === "New"
+                              ? "bg-green-100 text-green-800"
+                              : product.condition === "Like New"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-yellow-100 text-yellow-800"
+                      }`}
+                  >
+                    {product.condition}
+                  </span>
                                     <span
                                         className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                                             product.status === "Available"
@@ -370,8 +279,8 @@ export default function ProductDetail() {
                                                 : "bg-gray-100 text-gray-800"
                                         }`}
                                     >
-                                        {product.status}
-                                    </span>
+                    {product.status}
+                  </span>
                                 </div>
 
                                 {/* Tabs for description and specifications */}
@@ -425,9 +334,9 @@ export default function ProductDetail() {
                                                                             key={spec.spec_id}
                                                                             className="flex border-b border-gray-100 pb-2"
                                                                         >
-                                                                            <span className="font-medium text-gray-700 text-sm w-1/3">
-                                                                                {spec.name}
-                                                                            </span>
+                                      <span className="font-medium text-gray-700 text-sm w-1/3">
+                                        {spec.name}
+                                      </span>
                                                                             <span className="text-gray-600 text-sm">: {spec.value}</span>
                                                                         </div>
                                                                     ))}
@@ -444,13 +353,12 @@ export default function ProductDetail() {
                     </div>
                 </div>
 
-                {/* Gallery modal for full screen image viewing */}
+                {/* Gallery modal */}
                 {isGalleryOpen && (
                     <div
-                        className="fixed inset-0 z-50 bg-black/95"
+                        className="fixed inset-0 z-50 bg-black/80"
                         onClick={() => setIsGalleryOpen(false)}
                     >
-                        {/* Close button */}
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -462,7 +370,6 @@ export default function ProductDetail() {
                             <X size={32} />
                         </button>
 
-                        {/* Previous navigation button */}
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -474,7 +381,6 @@ export default function ProductDetail() {
                             <ChevronLeft size={60} strokeWidth={1.5} />
                         </button>
 
-                        {/* Next navigation button */}
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -486,12 +392,11 @@ export default function ProductDetail() {
                             <ChevronRight size={60} strokeWidth={1.5} />
                         </button>
 
-                        {/* Main image display */}
                         <div className="absolute inset-0 bottom-24 flex items-center justify-center p-8">
                             <div
                                 className="relative bg-white rounded-lg shadow-2xl w-full max-w-5xl"
                                 onClick={(e) => e.stopPropagation()}
-                                style={{ height: '70vh' }}
+                                style={{ height: "70vh" }}
                             >
                                 <Image
                                     src={getImageUrl(product.images[currentGalleryIndex].url)}
@@ -501,15 +406,12 @@ export default function ProductDetail() {
                                     unoptimized
                                     priority
                                 />
-
-                                {/* Image counter */}
                                 <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1.5 rounded text-sm font-medium">
                                     {currentGalleryIndex + 1}/{product.images.length}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Thumbnail navigation strip */}
                         <div
                             className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black to-transparent flex items-center justify-center px-4"
                             onClick={(e) => e.stopPropagation()}

@@ -80,3 +80,10 @@ export interface ProductDetailApiResponse {
     data?: ProductDetailItem | null;
     error?: string;
 }
+
+export interface RelatedProductApiResponse {
+    success: boolean;
+    code: number;
+    data?: ProductItem[];
+    error?: string;
+}
