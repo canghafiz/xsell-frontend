@@ -45,6 +45,7 @@ export default function SignInContent({ onForgotPassword, onValidateEmail, onClo
         // Tutup modal setelah toast muncul
         setTimeout(() => {
             onClose();
+            window.location.reload();
         }, 1500);
     };
 

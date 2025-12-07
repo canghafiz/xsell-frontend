@@ -1,10 +1,13 @@
 "use client";
+
 import { Search, Plus } from 'lucide-react';
 import LayoutTemplate from "@/components/layout";
 import Brand from "@/components/brand";
 import PrimaryBtn from "@/components/primary_btn";
 import AuthModal from "@/components/auth/auth_modal";
-import React, { useState, useRef } from "react";
+import UserMenu from "@/components/user/user_menu";
+import React, { useState, useRef, useEffect } from "react";
+import { User } from "@/types/user";
 
 interface HeaderProps {
     children: React.ReactNode;
@@ -14,6 +17,8 @@ export default function Header({ children }: HeaderProps) {
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [searchValue, setSearchValue] = useState("");
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     const handleSellClick = () => {
@@ -29,6 +34,41 @@ export default function Header({ children }: HeaderProps) {
     const handlePlaceholderClick = () => {
         searchInputRef.current?.focus();
     };
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const res = await fetch('/api/auth/me');
+                const { user } = await res.json();
+                setUser(user);
+            } catch (e) {
+                console.warn("Failed to fetch user", e);
+                setUser(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUser();
+    }, []);
+
+    if (loading) {
+        return (
+            <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
+                <LayoutTemplate>
+                    <div className="h-16 flex items-center justify-between">
+                        <Brand />
+                        <div className="flex items-center gap-3">
+                            <div className="w-20 h-5 bg-gray-200 rounded animate-pulse"></div>
+                            <PrimaryBtn icon={Plus} title="Sell" onClick={handleSellClick} ariaLabel="Sell" />
+                        </div>
+                    </div>
+                </LayoutTemplate>
+                <hr className="border-b border-gray-200" />
+                {children}
+            </header>
+        );
+    }
 
     return (
         <>
@@ -63,9 +103,16 @@ export default function Header({ children }: HeaderProps) {
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <button onClick={handleAuthClick} className="cursor-pointer text-gray-700 hover:text-gray-900 font-medium text-sm">
-                                SignIn/SignUp
-                            </button>
+                            {user ? (
+                                <UserMenu user={user} />
+                            ) : (
+                                <button
+                                    onClick={handleAuthClick}
+                                    className="cursor-pointer text-gray-700 hover:text-gray-900 font-medium text-sm"
+                                >
+                                    SignIn/SignUp
+                                </button>
+                            )}
                             <PrimaryBtn
                                 icon={Plus}
                                 title="Sell"
@@ -80,9 +127,16 @@ export default function Header({ children }: HeaderProps) {
                         <div className="flex items-center justify-between h-16 gap-3">
                             <Brand />
                             <div className="flex items-center gap-2">
-                                <button onClick={handleAuthClick} className="text-gray-700 hover:text-gray-900 font-medium text-sm">
-                                    SignIn/SignUp
-                                </button>
+                                {user ? (
+                                    <UserMenu user={user} />
+                                ) : (
+                                    <button
+                                        onClick={handleAuthClick}
+                                        className="cursor-pointer text-gray-700 hover:text-gray-900 font-medium text-sm"
+                                    >
+                                        SignIn/SignUp
+                                    </button>
+                                )}
                                 <PrimaryBtn
                                     icon={Plus}
                                     title="Sell"
