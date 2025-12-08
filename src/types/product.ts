@@ -87,3 +87,10 @@ export interface RelatedProductApiResponse {
     data?: ProductItem[];
     error?: string;
 }
+
+export interface ByCategoryProductApiResponse {
+    success: boolean;
+    code: number;
+    data?: ProductItem[];
+    error?: string;
+}

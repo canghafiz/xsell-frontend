@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-    productionBrowserSourceMaps: false,
+    turbopack: {},
     images: {
         remotePatterns: [
             {
@@ -13,4 +13,5 @@ const nextConfig: NextConfig = {
         ],
     },
 }
+
 export default nextConfig;
