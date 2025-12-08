@@ -8,9 +8,7 @@ interface ProductDetailPageContentProps {
 }
 
 export default async function ProductDetailPageContent({ product }: ProductDetailPageContentProps) {
-    const categoryIds = product.category
-        ?.map(cat => String(cat.category_id))
-        .join(',') || '';
+    const categoryIds = product.category.category_id;
 
     const params = {
         except_id: product.product_id,

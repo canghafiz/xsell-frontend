@@ -86,7 +86,7 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
     const currencyCode = (process.env.NEXT_PUBLIC_CURRENCY || "IDR").toUpperCase();
 
     // Derived values
-    const primaryCategory = product.category && product.category.length > 0 ? product.category[0] : null;
+    const primaryCategory = product.category;
     const primaryImage = product.images.find((img) => img.is_primary);
     const mainImage = product.images[mainImageIndex] || primaryImage || product.images[0];
     const productUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/product/${slug}`;
@@ -140,20 +140,12 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
                             <div>
                                 {/* Display all categories as badges */}
                                 <div className="flex flex-wrap gap-1.5 mb-2">
-                                    {product.category && product.category.length > 0 ? (
-                                        product.category.map((cat) => (
-                                            <span
-                                                key={cat.category_id}
-                                                className="inline-block px-2 py-0.5 bg-red-100 text-red-800 text-xs font-medium rounded-full"
-                                            >
-                        {cat.category_name}
+                                    <span
+                                        key={primaryCategory.category_id}
+                                        className="inline-block px-2 py-0.5 bg-red-100 text-red-800 text-xs font-medium rounded-full"
+                                    >
+                        {primaryCategory.category_name}
                       </span>
-                                        ))
-                                    ) : (
-                                        <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">
-                      Uncategorized
-                    </span>
-                                    )}
                                 </div>
                                 <h1 className="text-lg md:text-xl font-bold text-gray-900">
                                     {product.title}
