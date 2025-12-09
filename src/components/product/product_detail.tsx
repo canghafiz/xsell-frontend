@@ -85,8 +85,8 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
     const formattedPrice = formatCurrency(product.price);
     const currencyCode = (process.env.NEXT_PUBLIC_CURRENCY || "IDR").toUpperCase();
 
-    // Derived values
-    const primaryCategory = product.category;
+    // subCategory
+    const primaryCategory = product.sub_category.category;
     const primaryImage = product.images.find((img) => img.is_primary);
     const mainImage = product.images[mainImageIndex] || primaryImage || product.images[0];
     const productUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/product/${slug}`;
@@ -107,13 +107,13 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
                     <meta property="og:title" content={`${product.title} - ${formattedPrice}`} />
                     <meta property="og:description" content={product.description.substring(0, 160)} />
                     <meta property="og:image" content={mainImage ? getImageUrl(mainImage.url) : "/placeholder-image.png"} />
-                    <meta property="og:site_name" content="Your Site Name" />
+                    <meta property="og:site_name" content={process.env.NEXT_PUBLIC_APP_NAME || "Your Site Name"} />
                     <meta property="product:price:amount" content={product.price.toString()} />
                     <meta property="product:price:currency" content={currencyCode} />
                     <meta property="product:condition" content={product.condition.toLowerCase()} />
                     <meta property="product:availability" content={product.status === "Available" ? "in stock" : "out of stock"} />
 
-                    <meta name="language" content="Indonesian" />
+                    <meta name="language" content="en" />
                     <meta name="revisit-after" content="7 days" />
                 </Head>
             )}
@@ -138,14 +138,14 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
                     <div className="p-4 border-b border-gray-100">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>
-                                {/* Display all categories as badges */}
+                                {/* ✅ Tampilkan kategori utama */}
                                 <div className="flex flex-wrap gap-1.5 mb-2">
                                     <span
                                         key={primaryCategory.category_id}
                                         className="inline-block px-2 py-0.5 bg-red-100 text-red-800 text-xs font-medium rounded-full"
                                     >
-                        {primaryCategory.category_name}
-                      </span>
+                                        {primaryCategory.category_name}
+                                    </span>
                                 </div>
                                 <h1 className="text-lg md:text-xl font-bold text-gray-900">
                                     {product.title}
@@ -237,33 +237,33 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
                                             alert(`View profile of user ID: ${product.listing.user_id}`);
                                         }}
                                     >
-                    {product.listing.first_name} {product.listing.last_name || ""}
-                  </span>
+                                        {product.listing.first_name} {product.listing.last_name || ""}
+                                    </span>
                                 </div>
 
                                 {/* Location information */}
                                 <div className="flex items-center text-gray-600 text-sm">
                                     <MapPin className="h-3.5 w-3.5 mr-1.5" />
                                     <span>
-                    {product.location?.latitude && product.location?.longitude
-                        ? `${product.location.latitude.toFixed(4)}, ${product.location.longitude.toFixed(4)}`
-                        : "Location not available"}
-                  </span>
+                                        {product.location?.latitude && product.location?.longitude
+                                            ? `${product.location.latitude.toFixed(4)}, ${product.location.longitude.toFixed(4)}`
+                                            : "Location not available"}
+                                    </span>
                                 </div>
 
                                 {/* Product condition and status badges */}
                                 <div className="flex flex-wrap gap-2 pt-1.5">
-                  <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          product.condition === "New"
-                              ? "bg-green-100 text-green-800"
-                              : product.condition === "Like New"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-yellow-100 text-yellow-800"
-                      }`}
-                  >
-                    {product.condition}
-                  </span>
+                                    <span
+                                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                            product.condition === "New"
+                                                ? "bg-green-100 text-green-800"
+                                                : product.condition === "Like New"
+                                                    ? "bg-red-100 text-red-800"
+                                                    : "bg-yellow-100 text-yellow-800"
+                                        }`}
+                                    >
+                                        {product.condition}
+                                    </span>
                                     <span
                                         className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                                             product.status === "Available"
@@ -271,8 +271,8 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
                                                 : "bg-gray-100 text-gray-800"
                                         }`}
                                     >
-                    {product.status}
-                  </span>
+                                        {product.status}
+                                    </span>
                                 </div>
 
                                 {/* Tabs for description and specifications */}
@@ -326,9 +326,9 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
                                                                             key={spec.spec_id}
                                                                             className="flex border-b border-gray-100 pb-2"
                                                                         >
-                                      <span className="font-medium text-gray-700 text-sm w-1/3">
-                                        {spec.name}
-                                      </span>
+                                                                            <span className="font-medium text-gray-700 text-sm w-1/3">
+                                                                                {spec.name}
+                                                                            </span>
                                                                             <span className="text-gray-600 text-sm">: {spec.value}</span>
                                                                         </div>
                                                                     ))}

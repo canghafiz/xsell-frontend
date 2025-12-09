@@ -17,9 +17,9 @@ export function useProductSEO(
         const mainImage = product.images[mainImageIndex] || product.images.find((img) => img.is_primary) || product.images[0];
         const imageUrl = mainImage ? getImageUrl(mainImage.url) : "/placeholder-image.png";
 
-        const title = `${product.title} - Rp${product.price.toLocaleString("id-ID")} | ${product.category.category_name}`;
+        const title = `${product.title} - Rp${product.price.toLocaleString("id-ID")} | ${product.sub_category.category.category_name}`;
         const description = product.description.substring(0, 160);
-        const keywords = `${product.title}, ${product.category.category_name}, ${product.condition}, ${product.specs.map(s => s.value).join(", ")}`;
+        const keywords = `${product.title}, ${product.sub_category.category.category_name}, ${product.condition}, ${product.specs.map(s => s.value).join(", ")}`;
         const author = `${product.listing.first_name} ${product.listing.last_name || ""}`;
         const url = `${process.env.NEXT_PUBLIC_SITE_URL}/product/${slug}`;
 

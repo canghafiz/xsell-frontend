@@ -3,16 +3,16 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
 
-    const categoryIds = searchParams.getAll('categoryIds');
+    const categorySlug = searchParams.get('categorySlug');
     const sortBy = searchParams.get('sortBy');
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
     const limit = searchParams.get('limit');
     const offset = searchParams.get('offset') || '0';
 
-    if (!categoryIds || categoryIds.length === 0) {
+    if (!categorySlug) {
         return NextResponse.json(
-            { success: false, code: 400, error: "At least one categoryId is required" },
+            { success: false, code: 400, error: "categorySlug is required" },
             { status: 400 }
         );
     }
@@ -27,15 +27,13 @@ export async function GET(request: NextRequest) {
 
     const queryParams = new URLSearchParams();
 
-    categoryIds.forEach(id => {
-        queryParams.append('categoryIds', id);
-    });
+    queryParams.append('categorySlug', categorySlug); // ✅ kirim slug ke backend
 
     if (sortBy) queryParams.append('sortBy', sortBy);
     if (minPrice) queryParams.append('minPrice', minPrice);
     if (maxPrice) queryParams.append('maxPrice', maxPrice);
     if (limit) queryParams.append('limit', limit);
-    queryParams.append('offset', offset); // ✅ Add offset to backend call
+    queryParams.append('offset', offset);
 
     const backendUrl = `${BE_API}member/product/category?${queryParams.toString()}`;
 

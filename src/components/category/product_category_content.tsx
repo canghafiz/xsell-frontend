@@ -1,25 +1,25 @@
 'use client';
 
-import { useState } from "react";
-import { ProductItem } from "@/types/product";
-import { ByCategoryProductApiResponse } from "@/types/product";
-import ProductCard from "@/components/product_card";
+import { useState } from 'react';
+import { ProductItem, ByCategoryProductApiResponse } from '@/types/product';
+import ProductCard from '@/components/product_card';
+import LayoutTemplate from "@/components/layout";
 
 interface ProductCategoryContentProps {
     initialProducts: ByCategoryProductApiResponse;
-    categoryIds: number[];
+    categorySlug: string;
     imagePrefixUrl: string;
 }
 
 export default function ProductCategoryContent({
                                                    initialProducts,
-                                                   categoryIds,
+                                                   categorySlug,
                                                    imagePrefixUrl,
                                                }: ProductCategoryContentProps) {
     const [products, setProducts] = useState<ProductItem[]>(initialProducts.data || []);
     const [isLoading, setIsLoading] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
     const [offset, setOffset] = useState(21);
+    const [hasMore, setHasMore] = useState((initialProducts.data?.length || 0) === 21);
 
     const LIMIT = 21;
 
@@ -29,64 +29,56 @@ export default function ProductCategoryContent({
         setIsLoading(true);
 
         try {
-            const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-            const queryParams = new URLSearchParams();
-
-            categoryIds.forEach(id => {
-                queryParams.append('categoryIds', id.toString());
+            const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+            const queryParams = new URLSearchParams({
+                categorySlug,
+                sortBy: 'price_desc',
+                minPrice: '0',
+                maxPrice: '9999999999',
+                limit: LIMIT.toString(),
+                offset: offset.toString(),
             });
 
-            queryParams.append('sortBy', 'price_desc');
-            queryParams.append('minPrice', '0');
-            queryParams.append('maxPrice', '9999999999');
-            queryParams.append('limit', LIMIT.toString());
-            queryParams.append('offset', offset.toString());
-
-            const res = await fetch(`${baseUrl}/api/product/category?${queryParams.toString()}`);
+            const res = await fetch(`${baseUrl}/api/product/category?${queryParams}`);
             const data: ByCategoryProductApiResponse = await res.json();
 
-            if (data.success && data.data) {
-                if (data.data.length === 0) {
+            if (data.success && data.data && data.data.length > 0) {
+                // Avoid duplicates
+                const existingIds = new Set(products.map(p => p.product_id));
+                const newProducts = data.data.filter(p => !existingIds.has(p.product_id));
+
+                if (newProducts.length > 0) {
+                    setProducts(prev => [...prev, ...newProducts]);
+                    setOffset(prev => prev + LIMIT);
+                }
+
+                // If we got less than LIMIT, no more data
+                if (data.data.length < LIMIT) {
                     setHasMore(false);
-                } else {
-                    // ✅ Filter out duplicates before adding
-                    const existingIds = new Set(products.map(p => p.product_id));
-                    const newProducts = data.data.filter(p => !existingIds.has(p.product_id));
-
-                    if (newProducts.length === 0) {
-                        setHasMore(false);
-                    } else {
-                        setProducts(prev => [...prev, ...newProducts]);
-                        setOffset(prev => prev + LIMIT);
-
-                        if (data.data.length < LIMIT) {
-                            setHasMore(false);
-                        }
-                    }
                 }
             } else {
                 setHasMore(false);
             }
         } catch (error) {
-            console.error("Error loading more products:", error);
+            console.error('Failed to load more products:', error);
             setHasMore(false);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Error State
+    // Handle initial error
     if (!initialProducts.success) {
         return (
             <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
                 <p className="text-red-800">
-                    {initialProducts.error || "Failed to load products"}
+                    {initialProducts.error || 'Failed to load products'}
                 </p>
             </div>
         );
     }
 
-    // Empty State
+    // Empty state
     if (products.length === 0) {
         return (
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
@@ -97,59 +89,35 @@ export default function ProductCategoryContent({
     }
 
     return (
-        <>
-            {/* Products Grid */}
+        <LayoutTemplate>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
-                {products.map((product, index) => (
+                {products.map((product) => (
                     <ProductCard
-                        key={`${product.product_id}-${index}`}
+                        key={product.product_id}
                         product={product}
                         imagePrefixUrl={imagePrefixUrl}
                     />
                 ))}
             </div>
 
-            {/* Load More Button - Red theme */}
+            {/* Load More Button */}
             {hasMore && (
                 <div className="flex justify-center mt-8">
                     <button
                         onClick={loadMore}
                         disabled={isLoading}
-                        className="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium shadow-md hover:shadow-lg"
+                        className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
                     >
-                        {isLoading ? (
-                            <span className="flex items-center gap-2">
-                                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                    <circle
-                                        className="opacity-25"
-                                        cx="12"
-                                        cy="12"
-                                        r="10"
-                                        stroke="currentColor"
-                                        strokeWidth="4"
-                                        fill="none"
-                                    />
-                                    <path
-                                        className="opacity-75"
-                                        fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                    />
-                                </svg>
-                                Loading...
-                            </span>
-                        ) : (
-                            'Load More'
-                        )}
+                        {isLoading ? 'Loading...' : 'Load More'}
                     </button>
                 </div>
             )}
 
-            {/* End of Results */}
             {!hasMore && products.length > 0 && (
-                <div className="text-center mt-8 text-gray-500">
-                    <p>You&#39;ve reached the end of the list</p>
+                <div className="text-center mt-6 text-gray-500 text-sm">
+                    No more products to load
                 </div>
             )}
-        </>
+        </LayoutTemplate>
     );
 }

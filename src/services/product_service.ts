@@ -44,37 +44,33 @@ class ProductService {
         }
     }
     async getByCategory(params: {
-        categoryIds: number[];
+        categorySlug: string;
         sortBy?: string;
         minPrice?: number;
         maxPrice?: number;
         limit?: number;
+        offset?: number;
     }): Promise<ByCategoryProductApiResponse> {
-        const { categoryIds, sortBy, minPrice, maxPrice, limit } = params;
+        const { categorySlug, sortBy, minPrice, maxPrice, limit, offset } = params;
 
-        if (!categoryIds || categoryIds.length === 0) {
+        if (!categorySlug) {
             return {
                 success: false,
                 code: 400,
-                error: "At least one category ID is required",
+                error: "categorySlug is required",
             };
         }
 
         const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-
-        // Build query string
         const queryParams = new URLSearchParams();
 
-        // Add multiple categoryIds
-        categoryIds.forEach(id => {
-            queryParams.append('categoryIds', id.toString());
-        });
+        queryParams.append('categorySlug', categorySlug);
 
-        // Add optional params
         if (sortBy) queryParams.append('sortBy', sortBy);
         if (minPrice !== undefined) queryParams.append('minPrice', minPrice.toString());
         if (maxPrice !== undefined) queryParams.append('maxPrice', maxPrice.toString());
         if (limit !== undefined) queryParams.append('limit', limit.toString());
+        if (offset !== undefined) queryParams.append('offset', offset.toString()); // ✅ Added
 
         const url = `${baseUrl}/api/product/category?${queryParams.toString()}`;
 
@@ -82,7 +78,7 @@ class ProductService {
             const res = await fetch(url, {
                 method: "GET",
                 headers: { "Accept": "application/json" },
-                cache: 'no-store', // Prevent caching for fresh data
+                cache: 'no-store',
             });
 
             if (!res.ok) {

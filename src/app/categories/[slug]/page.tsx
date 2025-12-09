@@ -10,18 +10,6 @@ const formatSlugToTitle = (slug: string): string =>
         .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
         .join(" ");
 
-const getCategoryIdFromSlug = (slug: string): number[] => {
-    const categoryMap: Record<string, number[]> = {
-        'electronics': [2],
-        'fashion': [5],
-        'home-garden': [3],
-        'sports': [7],
-        'electronics-fashion': [2, 5],
-    };
-
-    return categoryMap[slug] || [];
-};
-
 export async function generateMetadata({
                                            params,
                                        }: {
@@ -29,7 +17,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
     const { slug } = await params;
     const appName = process.env.NEXT_PUBLIC_APP_NAME || "XSELL";
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://example.com";
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://example.com").trim();
     const categoryName = formatSlugToTitle(slug);
     const title = `${appName} - ${categoryName}`;
     const description = `Discover the best products in the ${categoryName} category on ${appName}.`;
@@ -60,29 +48,9 @@ export async function generateMetadata({
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const categoryName = formatSlugToTitle(slug);
-    const categoryIds = getCategoryIdFromSlug(slug);
 
-    if (categoryIds.length === 0) {
-        return (
-            <>
-                <HeaderCategories />
-                <main className="min-h-screen mt-48 md:mt-36 px-4">
-                    <div className="max-w-7xl mx-auto">
-                        <h1 className="text-3xl font-bold mb-8">{categoryName}</h1>
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-                            <p className="text-yellow-800">Category not found or not configured.</p>
-                        </div>
-                    </div>
-                </main>
-                <Footer />
-            </>
-        );
-    }
-
-    // Initial fetch
     const initialProducts = await productService.getByCategory({
-        categoryIds,
+        categorySlug: slug,
         sortBy: 'price_desc',
         minPrice: 0,
         maxPrice: 9999999999,
@@ -95,17 +63,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         <>
             <HeaderCategories />
             <main className="min-h-screen mt-48 md:mt-36 px-4">
-                <div className="max-w-7xl mx-auto">
-                    <div className="mb-8">
-                        <h1 className="text-3xl md:text-4xl font-bold mb-2">{categoryName}</h1>
-                    </div>
-
-                    <ProductCategoryContent
-                        initialProducts={initialProducts}
-                        categoryIds={categoryIds}
-                        imagePrefixUrl={imagePrefixUrl}
-                    />
-                </div>
+                <ProductCategoryContent
+                    initialProducts={initialProducts}
+                    categorySlug={slug}
+                    imagePrefixUrl={imagePrefixUrl}
+                />
             </main>
             <Footer />
         </>

@@ -1,4 +1,4 @@
-import {CategoryItem} from "@/types/category";
+import {SubCategoryItem} from "@/types/category";
 
 export interface PageSectionItem {
     page_key: string;
@@ -66,7 +66,7 @@ export interface ProductDetailItem {
     price: number;
     condition: string;
     status: string;
-    category: CategoryItem;
+    sub_category: SubCategoryItem;
     images: ProductImage[];
     specs: ProductSpec[];
     location: ProductLocation;
