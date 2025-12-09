@@ -81,7 +81,7 @@ export default async function CategoryPage({
     return (
         <>
             <HeaderCategories />
-            <main className="min-h-screen mt-48 md:mt-36 px-4">
+            <main className="min-h-screen mt-48 md:mt-36">
                 <ProductCategoryContent
                     initialProducts={initialProducts}
                     categorySlug={slug}

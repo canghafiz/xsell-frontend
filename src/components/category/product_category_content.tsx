@@ -32,6 +32,7 @@ export default function ProductCategoryContent({
 
     const [subCategories, setSubCategories] = useState<{ sub_category_id: number; sub_category_name: string; sub_category_slug: string }[]>([]);
 
+    // Sync subcategory to URL
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const url = new URL(window.location.href);
@@ -43,6 +44,7 @@ export default function ProductCategoryContent({
         }
     }, [selectedSubCategories]);
 
+    // Fetch subcategories
     useEffect(() => {
         const fetchSubCategories = async () => {
             const res = await subCategoryService.getByCategorySlug(categorySlug);
@@ -53,6 +55,7 @@ export default function ProductCategoryContent({
         fetchSubCategories();
     }, [categorySlug]);
 
+    // Currency formatting
     const formatCurrency = (amount: number): string => {
         const currencyCode = (process.env.NEXT_PUBLIC_CURRENCY?.trim() || 'IDR').toUpperCase();
         const zeroDecimalCurrencies = new Set([
@@ -140,11 +143,7 @@ export default function ProductCategoryContent({
             const queryParams = new URLSearchParams();
 
             queryParams.append('categorySlug', categorySlug);
-
-            selectedSubCategories.forEach(slug => {
-                queryParams.append('subCategorySlug', slug);
-            });
-
+            selectedSubCategories.forEach(slug => queryParams.append('subCategorySlug', slug));
             queryParams.append('sortBy', sortBy);
             queryParams.append('minPrice', minPrice || '0');
             queryParams.append('maxPrice', maxPrice || '999999999');
@@ -163,10 +162,7 @@ export default function ProductCategoryContent({
                     setProducts(prev => {
                         const existingIds = new Set(prev.map(p => p.product_id));
                         const newProducts = (data.data ?? []).filter(p => !existingIds.has(p.product_id));
-                        if (newProducts.length > 0) {
-                            return [...prev, ...newProducts];
-                        }
-                        return prev;
+                        return newProducts.length > 0 ? [...prev, ...newProducts] : prev;
                     });
                     setOffset(prev => prev + LIMIT);
                     setHasMore((data.data ?? []).length === LIMIT);
@@ -190,14 +186,14 @@ export default function ProductCategoryContent({
         }
     }, [categorySlug, selectedSubCategories, sortBy, minPrice, maxPrice]);
 
+    // Apply filter on sort or subcategory change
     useEffect(() => {
         applyFilters(0);
     }, [sortBy, selectedSubCategories, applyFilters]);
 
+    // Debounced price filter
     useEffect(() => {
-        const timer = setTimeout(() => {
-            applyFilters(0);
-        }, 500);
+        const timer = setTimeout(() => applyFilters(0), 500);
         return () => clearTimeout(timer);
     }, [minPrice, maxPrice, applyFilters]);
 
@@ -210,11 +206,7 @@ export default function ProductCategoryContent({
             const queryParams = new URLSearchParams();
 
             queryParams.append('categorySlug', categorySlug);
-
-            selectedSubCategories.forEach(slug => {
-                queryParams.append('subCategorySlug', slug);
-            });
-
+            selectedSubCategories.forEach(slug => queryParams.append('subCategorySlug', slug));
             queryParams.append('sortBy', sortBy);
             queryParams.append('minPrice', minPrice || '0');
             queryParams.append('maxPrice', maxPrice || '999999999');
@@ -272,10 +264,11 @@ export default function ProductCategoryContent({
 
     return (
         <LayoutTemplate>
-            {/* Mobile Filter Button - Hamburger Style */}
+            {/* Mobile Filter Button */}
             <div className="lg:hidden mb-4">
                 <button
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                    aria-label="Open filters and sort options"
                     className="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium flex items-center justify-between hover:bg-gray-50 transition-colors"
                 >
                     <span className="flex items-center gap-3">
@@ -296,24 +289,20 @@ export default function ProductCategoryContent({
             </div>
 
             <div className="flex gap-6 relative">
-                {/* Left Sidebar - Filters */}
+                {/* Sidebar */}
                 <aside className={`
                     fixed lg:static 
-                    top-0 left-0 bottom-0
-                    w-80 lg:w-80 flex-shrink-0
-                    bg-white 
-                    z-50 lg:z-auto
+                    top-0 left-0 bottom-0 w-80
+                    bg-white z-50 lg:z-auto
                     transition-transform duration-300 ease-in-out
                     ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-                    overflow-y-auto
-                    shadow-2xl lg:shadow-none
-                    p-4 lg:p-0
+                    overflow-y-auto shadow-2xl lg:shadow-none p-4 lg:p-0
                 `}>
-                    {/* Mobile Close Button */}
                     <div className="lg:hidden flex justify-between items-center mb-4 pb-4 border-b border-gray-200 sticky top-0 bg-white z-10">
                         <h2 className="text-xl font-semibold">Filters</h2>
                         <button
                             onClick={() => setIsSidebarOpen(false)}
+                            aria-label="Close filter panel"
                             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -322,11 +311,10 @@ export default function ProductCategoryContent({
                         </button>
                     </div>
 
-                    {/* Price Range Filter */}
+                    {/* Price Range */}
                     <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm mb-4">
                         <h3 className="font-semibold text-lg mb-4">Price Range</h3>
                         <div className="space-y-4">
-                            {/* Dual Range Slider Visualization */}
                             <div className="relative h-2 bg-gray-200 rounded-full">
                                 <div
                                     className="absolute h-full bg-red-500 rounded-full"
@@ -336,11 +324,9 @@ export default function ProductCategoryContent({
                                     }}
                                 />
                             </div>
-
-                            {/* Min and Max Input Fields */}
                             <div className="flex items-center gap-3">
                                 <div className="flex-1">
-                                    <label className="block text-xs text-gray-600 mb-1">Min Price</label>
+                                    <label className="block text-xs text-gray-600 mb-1 sr-only">Min Price</label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
                                             {getCurrencySymbol()}
@@ -354,11 +340,9 @@ export default function ProductCategoryContent({
                                         />
                                     </div>
                                 </div>
-
                                 <div className="pt-5 text-gray-400">—</div>
-
                                 <div className="flex-1">
-                                    <label className="block text-xs text-gray-600 mb-1">Max Price</label>
+                                    <label className="block text-xs text-gray-600 mb-1 sr-only">Max Price</label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
                                             {getCurrencySymbol()}
@@ -373,8 +357,6 @@ export default function ProductCategoryContent({
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Display Selected Range */}
                             <div className="text-center py-2 px-4 bg-gray-50 rounded-lg border border-gray-200">
                                 <span className="text-sm font-medium text-gray-700">
                                     {formatCurrency(parseInt(minPrice || '0'))} - {formatCurrency(parseInt(maxPrice || '999999999'))}
@@ -383,11 +365,10 @@ export default function ProductCategoryContent({
                         </div>
                     </div>
 
-                    {/* Categories Filter */}
+                    {/* Categories */}
                     <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
                         <h3 className="font-semibold text-lg mb-4">Categories</h3>
                         <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                            {/* Parent Category Checkbox */}
                             <div className="flex items-center pb-3 border-b border-gray-200">
                                 <input
                                     id="parent-category"
@@ -397,11 +378,9 @@ export default function ProductCategoryContent({
                                     className="mr-3 h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500 focus:border-red-500"
                                 />
                                 <label htmlFor="parent-category" className="text-sm font-medium cursor-pointer">
-                                    Laptop & Accessories
+                                    All {categorySlug.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                 </label>
                             </div>
-
-                            {/* Subcategories */}
                             {subCategories.map(cat => (
                                 <div key={cat.sub_category_slug} className="flex items-center pl-6">
                                     <input
@@ -424,7 +403,6 @@ export default function ProductCategoryContent({
                         </div>
                     </div>
 
-                    {/* Mobile Apply Button */}
                     <div className="lg:hidden mt-4 sticky bottom-0 bg-white pt-4 border-t border-gray-200">
                         <button
                             onClick={() => setIsSidebarOpen(false)}
@@ -435,24 +413,23 @@ export default function ProductCategoryContent({
                     </div>
                 </aside>
 
-                {/* Backdrop for mobile */}
+                {/* Backdrop */}
                 {isSidebarOpen && (
                     <div
-                        className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden transition-opacity duration-300"
+                        className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
                         onClick={() => setIsSidebarOpen(false)}
                     />
                 )}
 
                 {/* Main Content */}
                 <main className="flex-1 min-w-0">
-                    {/* Top Bar with Products Title and Sort */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 bg-white border border-gray-200 p-4 rounded-lg shadow-sm">
                         <h2 className="text-xl font-semibold text-gray-800">Products</h2>
-
-                        {/* Sort By dropdown */}
                         <div className="flex items-center gap-3">
+                            <label htmlFor="sort-by-select" className="sr-only">Sort products by</label>
                             <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Sort By:</span>
                             <select
+                                id="sort-by-select"
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
                                 className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 min-w-[180px]"
@@ -466,10 +443,9 @@ export default function ProductCategoryContent({
                         </div>
                     </div>
 
-                    {/* Products Grid */}
                     {renderEmptyState() || (
                         <>
-                            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                 {products.map((product) => (
                                     <ProductCard
                                         key={product.product_id}
@@ -480,7 +456,6 @@ export default function ProductCategoryContent({
                                 ))}
                             </div>
 
-                            {/* Load More Button */}
                             {hasMore && (
                                 <div className="flex justify-center mt-8">
                                     <button
@@ -488,15 +463,7 @@ export default function ProductCategoryContent({
                                         disabled={isLoading}
                                         className="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
                                     >
-                                        {isLoading ? (
-                                            <span className="flex items-center gap-2">
-                                                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                                                </svg>
-                                                Loading...
-                                            </span>
-                                        ) : 'Load More Products'}
+                                        {isLoading ? 'Loading...' : 'Load More Products'}
                                     </button>
                                 </div>
                             )}

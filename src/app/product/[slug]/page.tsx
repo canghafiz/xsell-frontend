@@ -19,7 +19,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     return (
         <>
             <HeaderCategories />
-            <main className="min-h-screen mt-36 md:mt-36">
+            <main className="min-h-screen mt-48 md:mt-36">
                 <ProductDetail product={product} slug={slug} />
                 <ProductDetailPageContent product={product} />
             </main>

@@ -23,7 +23,7 @@ export default async function Categories() {
 
             <div
                 id="categories-scroll-container"
-                className="flex gap-4 px-4 py-2 overflow-x-auto scrollbar-hide whitespace-nowrap"
+                className="flex gap-4 py-2 overflow-x-auto scrollbar-hide whitespace-nowrap"
             >
                 {categories.map((category) => {
                     const IconComponent = getIconComponent(category.icon);
