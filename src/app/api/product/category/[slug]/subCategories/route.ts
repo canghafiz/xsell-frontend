@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
-    const searchParams = request.nextUrl.searchParams;
-
-    const categorySlug = searchParams.get('categorySlug');
-    const subCategorySlugs = searchParams.getAll('subCategorySlug');
-    const sortBy = searchParams.get('sortBy');
-    const minPrice = searchParams.get('minPrice');
-    const maxPrice = searchParams.get('maxPrice');
-    const limit = searchParams.get('limit');
-    const offset = searchParams.get('offset') || '0';
+export async function GET(
+    request: NextRequest,
+    { params }: { params: Promise<{ slug: string }> }
+) {
+    const { slug: categorySlug } = await params;
 
     if (!categorySlug) {
         return NextResponse.json(
@@ -26,24 +21,7 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    const queryParams = new URLSearchParams();
-
-    // Append required categorySlug
-    queryParams.append('categorySlug', categorySlug);
-
-    // Append ALL subCategorySlug values (if any)
-    for (const slug of subCategorySlugs) {
-        queryParams.append('subCategorySlug', slug);
-    }
-
-    // Append other optional params
-    if (sortBy) queryParams.append('sortBy', sortBy);
-    if (minPrice) queryParams.append('minPrice', minPrice);
-    if (maxPrice) queryParams.append('maxPrice', maxPrice);
-    if (limit) queryParams.append('limit', limit);
-    queryParams.append('offset', offset);
-
-    const backendUrl = `${BE_API}member/product/category?${queryParams.toString()}`;
+    const backendUrl = `${BE_API}member/category/${encodeURIComponent(categorySlug)}/subCategories`;
 
     try {
         const backendRes = await fetch(backendUrl, {
@@ -51,7 +29,7 @@ export async function GET(request: NextRequest) {
             headers: {
                 "Accept": "application/json",
             },
-            cache: 'no-store',
+            cache: "no-store",
         });
 
         const rawText = await backendRes.text();
@@ -64,12 +42,13 @@ export async function GET(request: NextRequest) {
                 errorResponse = {
                     success: false,
                     code: backendRes.status,
-                    error: "Products not found or unavailable",
+                    error: "Failed to fetch subcategories",
                 };
             }
             return NextResponse.json(errorResponse, { status: backendRes.status });
         }
 
+        // Forward the backend response as-is
         return new NextResponse(rawText, {
             status: backendRes.status,
             headers: {
@@ -78,7 +57,7 @@ export async function GET(request: NextRequest) {
         });
     } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
-        console.error("Product Category API error:", msg);
+        console.error("SubCategories API error:", msg);
         return NextResponse.json(
             { success: false, code: 500, error: "Internal server error" },
             { status: 500 }

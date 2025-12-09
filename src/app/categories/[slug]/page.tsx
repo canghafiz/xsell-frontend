@@ -14,6 +14,7 @@ export async function generateMetadata({
                                            params,
                                        }: {
     params: Promise<{ slug: string }>;
+    searchParams: Promise<{ subCategorySlug?: string | string[] }>;
 }): Promise<Metadata> {
     const { slug } = await params;
     const appName = process.env.NEXT_PUBLIC_APP_NAME || "XSELL";
@@ -46,11 +47,29 @@ export async function generateMetadata({
     };
 }
 
-export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function CategoryPage({
+                                               params,
+                                               searchParams,
+                                           }: {
+    params: Promise<{ slug: string }>;
+    searchParams: Promise<{ subCategorySlug?: string | string[] }>;
+}) {
     const { slug } = await params;
+    const sp = await searchParams;
+
+    // Normalize subCategorySlug to string[]
+    let subCategorySlugs: string[] = [];
+    if (sp.subCategorySlug) {
+        if (Array.isArray(sp.subCategorySlug)) {
+            subCategorySlugs = sp.subCategorySlug;
+        } else {
+            subCategorySlugs = [sp.subCategorySlug];
+        }
+    }
 
     const initialProducts = await productService.getByCategory({
         categorySlug: slug,
+        subCategorySlug: subCategorySlugs,
         sortBy: 'price_desc',
         minPrice: 0,
         maxPrice: 9999999999,
@@ -66,6 +85,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                 <ProductCategoryContent
                     initialProducts={initialProducts}
                     categorySlug={slug}
+                    subCategorySlug={subCategorySlugs}
                     imagePrefixUrl={imagePrefixUrl}
                 />
             </main>

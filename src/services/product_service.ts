@@ -45,13 +45,14 @@ class ProductService {
     }
     async getByCategory(params: {
         categorySlug: string;
+        subCategorySlug?: string[];
         sortBy?: string;
         minPrice?: number;
         maxPrice?: number;
         limit?: number;
         offset?: number;
     }): Promise<ByCategoryProductApiResponse> {
-        const { categorySlug, sortBy, minPrice, maxPrice, limit, offset } = params;
+        const { categorySlug, subCategorySlug, sortBy, minPrice, maxPrice, limit, offset } = params;
 
         if (!categorySlug) {
             return {
@@ -66,11 +67,17 @@ class ProductService {
 
         queryParams.append('categorySlug', categorySlug);
 
+        if (subCategorySlug && subCategorySlug.length > 0) {
+            for (const slug of subCategorySlug) {
+                queryParams.append('subCategorySlug', slug);
+            }
+        }
+
         if (sortBy) queryParams.append('sortBy', sortBy);
         if (minPrice !== undefined) queryParams.append('minPrice', minPrice.toString());
         if (maxPrice !== undefined) queryParams.append('maxPrice', maxPrice.toString());
         if (limit !== undefined) queryParams.append('limit', limit.toString());
-        if (offset !== undefined) queryParams.append('offset', offset.toString()); // ✅ Added
+        if (offset !== undefined) queryParams.append('offset', offset.toString());
 
         const url = `${baseUrl}/api/product/category?${queryParams.toString()}`;
 
