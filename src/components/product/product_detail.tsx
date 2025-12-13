@@ -245,9 +245,7 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
                                 <div className="flex items-center text-gray-600 text-sm">
                                     <MapPin className="h-3.5 w-3.5 mr-1.5" />
                                     <span>
-                                        {product.location?.latitude && product.location?.longitude
-                                            ? `${product.location.latitude.toFixed(4)}, ${product.location.longitude.toFixed(4)}`
-                                            : "Location not available"}
+                                        {product.location?.address || "Location not available"}
                                     </span>
                                 </div>
 
@@ -385,23 +383,14 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
                         </button>
 
                         <div className="absolute inset-0 bottom-24 flex items-center justify-center p-8">
-                            <div
-                                className="relative bg-white rounded-lg shadow-2xl w-full max-w-5xl"
-                                onClick={(e) => e.stopPropagation()}
-                                style={{ height: "70vh" }}
-                            >
-                                <Image
-                                    src={getImageUrl(product.images[currentGalleryIndex].url)}
-                                    alt={`${product.title} - Image ${currentGalleryIndex + 1}`}
-                                    fill
-                                    className="object-contain p-4 rounded-lg"
-                                    unoptimized
-                                    priority
-                                />
-                                <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1.5 rounded text-sm font-medium">
-                                    {currentGalleryIndex + 1}/{product.images.length}
-                                </div>
-                            </div>
+                            <Image
+                                src={getImageUrl(product.images[currentGalleryIndex].url)}
+                                alt={`${product.title} - Image ${currentGalleryIndex + 1}`}
+                                fill
+                                className="object-contain p-4 rounded-lg"
+                                unoptimized
+                                priority
+                            />
                         </div>
 
                         <div
