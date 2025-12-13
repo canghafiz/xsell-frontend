@@ -34,6 +34,7 @@ export interface ProductImage {
 export interface ProductLocation {
     latitude: number;
     longitude: number;
+    address: string;
 }
 
 export interface ProductListing {
