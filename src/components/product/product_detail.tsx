@@ -10,6 +10,7 @@ import Head from "next/head";
 import WishlistBtn from "@/components/wishlist_btn";
 import ShareButton from "@/components/share_btn";
 import { formatCurrency } from "@/utils/currency";
+import ShowMap from "@/components/map/show_map";
 
 interface ProductDetailProps {
     product: ProductDetailItem;
@@ -18,7 +19,7 @@ interface ProductDetailProps {
 
 export default function ProductDetail({ product, slug }: ProductDetailProps) {
     const [mainImageIndex, setMainImageIndex] = useState(0);
-    const [activeTab, setActiveTab] = useState<"description" | "specification">("description");
+    const [activeTab, setActiveTab] = useState<"description" | "specification" | "map">("description");
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
     const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
 
@@ -296,6 +297,16 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
                                         >
                                             Specification
                                         </button>
+                                        <button
+                                            onClick={() => setActiveTab("map")}
+                                            className={`pb-2 px-0.5 text-sm font-medium transition-colors ${
+                                                activeTab === "map"
+                                                    ? "text-red-600 border-b-2 border-red-600"
+                                                    : "text-gray-500 hover:text-gray-700"
+                                            }`}
+                                        >
+                                            Map
+                                        </button>
                                     </div>
 
                                     {/* Tab content */}
@@ -305,10 +316,16 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
                                                 <h2 className="text-lg font-bold text-gray-900 mb-2">
                                                     Product Overview
                                                 </h2>
-                                                <div className="text-gray-700 text-sm whitespace-pre-line leading-relaxed">
+                                                <div
+                                                    className="text-gray-700 text-sm whitespace-pre-line leading-relaxed">
                                                     {product.description}
                                                 </div>
                                             </div>
+                                        ) : activeTab === "map" ? (
+                                            <ShowMap
+                                                longitude={product.location?.longitude || 0}
+                                                latitude={product.location?.latitude || 0}
+                                            />
                                         ) : (
                                             <div className="space-y-4">
                                                 {Object.entries(groupedSpecs).map(

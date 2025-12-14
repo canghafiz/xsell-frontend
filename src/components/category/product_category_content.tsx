@@ -288,7 +288,7 @@ export default function ProductCategoryContent({
                 </button>
             </div>
 
-            <div className="flex gap-6 relative">
+            <div className="z-9999 flex gap-6 relative">
                 {/* Sidebar */}
                 <aside className={`
                     fixed lg:static 
@@ -416,7 +416,7 @@ export default function ProductCategoryContent({
                 {/* Backdrop */}
                 {isSidebarOpen && (
                     <div
-                        className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+                        className="fixed inset-0 bg-black/50 z-40 lg:hidden"
                         onClick={() => setIsSidebarOpen(false)}
                     />
                 )}
