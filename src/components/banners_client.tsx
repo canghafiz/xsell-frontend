@@ -95,8 +95,8 @@ export default function BannersClient({ initialBanners, imagePrefixUrl }: Banner
                                     isActive
                                         ? 'w-full md:w-[55%] z-10'
                                         : isNext
-                                            ? 'hidden md:block md:w-[55%] z-5'
-                                            : 'hidden md:block md:w-[55%] z-0'
+                                            ? 'hidden sm:block md:w-[55%] z-5'
+                                            : 'hidden sm:block md:w-[55%] z-0'
                                 }`}
                                 style={{ aspectRatio: '16/9', minHeight: '200px' }}
                             >

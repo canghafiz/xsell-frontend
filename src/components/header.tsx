@@ -8,6 +8,7 @@ import AuthModal from "@/components/auth/auth_modal";
 import UserMenu from "@/components/user/user_menu";
 import React, { useState, useRef, useEffect } from "react";
 import { User } from "@/types/user";
+import DropdownMapLocation from "@/components/map/dropdown_map_location";
 
 interface HeaderProps {
     children: React.ReactNode;
@@ -74,10 +75,11 @@ export default function Header({ children }: HeaderProps) {
         <>
             <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
                 <LayoutTemplate>
-                    {/* Desktop */}
+                    {/* Desktop: Brand | Location | Search | Auth+Sell */}
                     <div className="hidden md:flex items-center justify-between h-16 gap-4">
                         <Brand />
-                        <div className="flex-1 max-w-2xl relative">
+                        <DropdownMapLocation />
+                        <div className="flex-1 max-w-3xl">
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <Search className="h-5 w-5 text-gray-400" />
@@ -90,11 +92,11 @@ export default function Header({ children }: HeaderProps) {
                                     onFocus={() => setIsSearchFocused(true)}
                                     onBlur={() => setIsSearchFocused(false)}
                                     aria-label="Search for items like car, phone, and more"
-                                    className="mr-2 block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
                                 />
                                 {(!searchValue && !isSearchFocused) && (
                                     <div
-                                        className="animated-placeholder"
+                                        className="animated-placeholder absolute inset-0 flex items-center pl-3 text-gray-400 text-sm pointer-events-none"
                                         onClick={handlePlaceholderClick}
                                     >
                                         Find Car, Phone, and other ...
@@ -122,9 +124,10 @@ export default function Header({ children }: HeaderProps) {
                         </div>
                     </div>
 
-                    {/* Mobile */}
+                    {/* Mobile: Brand + Auth/Sell | Location | Search */}
                     <div className="md:hidden">
-                        <div className="flex items-center justify-between h-16 gap-3">
+                        {/* Top row: Brand + Auth + Sell */}
+                        <div className="flex items-center justify-between h-14">
                             <Brand />
                             <div className="flex items-center gap-2">
                                 {user ? (
@@ -132,24 +135,31 @@ export default function Header({ children }: HeaderProps) {
                                 ) : (
                                     <button
                                         onClick={handleAuthClick}
-                                        className="cursor-pointer text-gray-700 hover:text-gray-900 font-medium text-sm"
+                                        className="text-gray-700 hover:text-gray-900 font-medium text-sm whitespace-nowrap"
                                     >
-                                        SignIn/SignUp
+                                        Sign In
                                     </button>
                                 )}
                                 <PrimaryBtn
                                     icon={Plus}
                                     title="Sell"
                                     onClick={handleSellClick}
-                                    ariaLabel={`Start selling your items on ${appName}`}
+                                    ariaLabel={`Sell on ${appName}`}
+                                    className="!px-2 !py-1 text-xs"
                                 />
                             </div>
                         </div>
 
+                        {/* Location ABOVE search */}
+                        <div className="py-2">
+                            <DropdownMapLocation />
+                        </div>
+
+                        {/* Search BELOW location */}
                         <div className="pb-3">
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Search className="h-5 w-5 text-gray-400" />
+                                    <Search className="h-4 w-4 text-gray-400" />
                                 </div>
                                 <input
                                     ref={searchInputRef}
@@ -158,12 +168,12 @@ export default function Header({ children }: HeaderProps) {
                                     onChange={(e) => setSearchValue(e.target.value)}
                                     onFocus={() => setIsSearchFocused(true)}
                                     onBlur={() => setIsSearchFocused(false)}
-                                    className="block w-full pl-10 pr-3 py-2 mr-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
-                                    aria-label="Search for items like car, phone, and more"
+                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                                    aria-label="Search for items"
                                 />
                                 {(!searchValue && !isSearchFocused) && (
                                     <div
-                                        className="animated-placeholder"
+                                        className="animated-placeholder absolute inset-0 flex items-center pl-2 text-gray-400 text-sm pointer-events-none"
                                         onClick={handlePlaceholderClick}
                                     >
                                         Find Car, Phone, and other ...
