@@ -2,27 +2,57 @@ import {ProductPageApiResponse, RelatedProductApiResponse} from "@/types/product
 
 class PageService {
     async getPage(slug: string, params?: Record<string, string | number>): Promise<ProductPageApiResponse> {
-        const allParams = {
-            slug,
-            ...(params || {}),
-        };
-
-        const queryString = new URLSearchParams(
-            Object.entries(allParams).map(([k, v]) => [k, String(v)])
-        ).toString();
-
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
-        const url = `${baseUrl}/api/page${queryString ? `?${queryString}` : ""}`;
-
         try {
+            let baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
+            if (!baseUrl) {
+                console.error("NEXT_PUBLIC_SITE_URL is not set");
+                return {
+                    success: false,
+                    code: 500,
+                    data: { page_key: "", data: [] },
+                };
+            }
+
+            baseUrl = baseUrl.replace(/\/$/, "");
+
+            const allParams = {
+                slug,
+                ...(params || {}),
+            };
+
+            const queryString = new URLSearchParams(
+                Object.entries(allParams).map(([k, v]) => [k, String(v)])
+            ).toString();
+
+            const url = `${baseUrl}/api/page${queryString ? `?${queryString}` : ""}`;
+
             const res = await fetch(url, {
                 method: "GET",
                 headers: {
-                    "Accept": "application/json",
+                    Accept: "application/json",
                 },
             });
 
+            if (!res.ok) {
+                console.error(`API error: ${res.status} ${res.statusText}`);
+                return {
+                    success: false,
+                    code: res.status,
+                    data: { page_key: "", data: [] },
+                };
+            }
+
             const data = await res.json();
+
+            if (!data || typeof data !== "object" || !("success" in data)) {
+                console.error("Invalid API response structure", data);
+                return {
+                    success: false,
+                    code: 500,
+                    data: { page_key: "", data: [] },
+                };
+            }
+
             return data as ProductPageApiResponse;
         } catch (error) {
             console.error("Page fetch error:", error);

@@ -65,7 +65,7 @@ export default function ShowMap({ longitude, latitude }: ShowMapProps) {
             styleScript.onload = () => {
                 if (!mapContainer.current) return;
 
-                window.locationiq.key = 'pk.68a1d89229edc7504f2223eebef56e8a';
+                window.locationiq.key = process.env.NEXT_PUBLIC_MAP_KEY ?? "";
 
                 map.current = new window.maplibregl.Map({
                     container: mapContainer.current,

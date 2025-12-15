@@ -1,18 +1,21 @@
 "use client";
 
 import { MapPin, Search, X } from "lucide-react";
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Cookies from "js-cookie";
 import mapService from "@/services/map_service";
 import { MapItem } from "@/types/map";
 
 const LOCATION_COOKIE_KEY = "user_location";
 
-// Updated Bandar Lampung coordinates
 const DEFAULT_LOCATION: MapItem = {
-    latitude: -5.4460713,
-    longitude: 105.2643742,
-    address: "Bandar Lampung, Lampung",
+    latitude: process.env.NEXT_PUBLIC__DEFAULT_LOCATION_LAT
+        ? parseFloat(process.env.NEXT_PUBLIC__DEFAULT_LOCATION_LAT)
+        : -5.366689, // fallback latitude
+    longitude: process.env.NEXT_PUBLIC__DEFAULT_LOCATION_LON
+        ? parseFloat(process.env.NEXT_PUBLIC__DEFAULT_LOCATION_LON)
+        : 105.286585, // fallback longitude
+    address: process.env.NEXT_PUBLIC__DEFAULT_LOCATION_ADDRESS || "Bandar Lampung, Indonesia",
 };
 
 interface DropdownMapLocationProps {
@@ -43,6 +46,7 @@ export default function DropdownMapLocation({
                     return parsed;
                 }
             } catch (e) {
+                console.log(e)
                 console.warn("Invalid location cookie, using default");
             }
         }

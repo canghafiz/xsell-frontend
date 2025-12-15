@@ -10,7 +10,7 @@ export interface ProductPageSection {
     section_key: string;
     title: string;
     subtitle: string;
-    products: ProductItem[];
+    products?: ProductItem[] | null;
 }
 
 export interface ProductItem {
