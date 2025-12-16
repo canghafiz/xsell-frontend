@@ -10,6 +10,7 @@ export interface ProductPageSection {
     section_key: string;
     title: string;
     subtitle: string;
+    url: string;
     products?: ProductItem[] | null;
 }
 

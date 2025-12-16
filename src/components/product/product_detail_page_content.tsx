@@ -30,7 +30,9 @@ export default function ProductDetailPageContent({ product }: ProductDetailPageC
         if (!cookieMatch) return null;
         try {
             const loc = JSON.parse(decodeURIComponent(cookieMatch[1]));
-            if (loc.latitude && loc.longitude) return { latitude: loc.latitude, longitude: loc.longitude };
+            if (typeof loc.latitude === "number" && typeof loc.longitude === "number") {
+                return { latitude: loc.latitude, longitude: loc.longitude };
+            }
         } catch (err) {
             console.error("Failed to parse user_location cookie:", err);
         }
@@ -40,19 +42,28 @@ export default function ProductDetailPageContent({ product }: ProductDetailPageC
     const fetchData = useCallback(async (loc?: { latitude: number; longitude: number }) => {
         setLoading(true);
 
+        // --- Page params (for layout sections) ---
         const pageParams: Record<string, string | number> = { limit: 100 };
         if (loc) {
             pageParams.latitude = loc.latitude;
             pageParams.longitude = loc.longitude;
         }
-
-        // Untuk detail page, except_id = product.product_id
         const pageSlug = "detail";
         pageParams.except_id = product.product_id;
 
+        // --- Related products params (sesuai permintaanmu) ---
         const categoryIds = product.sub_category?.category?.category_id;
         const relatedParams = categoryIds
-            ? { categoryIds, limit: 100, excludeProductId: product.product_id }
+            ? {
+                categoryIds, // tetap sebagai number
+                limit: 10,   // ubah jadi 10 seperti contoh URL-mu
+                excludeProductId: product.product_id,
+                // Tambahkan latitude & longitude jika ada
+                ...(loc && {
+                    latitude: loc.latitude,
+                    longitude: loc.longitude,
+                }),
+            }
             : null;
 
         try {
@@ -60,19 +71,16 @@ export default function ProductDetailPageContent({ product }: ProductDetailPageC
                 pageService.getPage(pageSlug, pageParams),
                 relatedParams
                     ? pageService.getRelatedProducts(relatedParams)
-                    : Promise.resolve({
-                        success: false,
-                        code: 400,
-                        data: [] as ProductItem[],
-                        error: "No categories to fetch related products",
-                    }),
+                    : Promise.resolve({ success: false, code: 400, data: [] as ProductItem[] }),
             ]);
 
             const pageData: Section[] = Array.isArray(pagesRaw?.data?.data) ? pagesRaw.data.data : [];
             setSections(pageData);
 
             const related: ProductItem[] =
-                relatedResponse.success && Array.isArray(relatedResponse.data) ? relatedResponse.data : [];
+                relatedResponse.success && Array.isArray(relatedResponse.data)
+                    ? relatedResponse.data
+                    : [];
             setRelatedProducts(related);
         } catch (err) {
             console.error("Failed to fetch page data:", err);
@@ -83,6 +91,7 @@ export default function ProductDetailPageContent({ product }: ProductDetailPageC
         }
     }, [product]);
 
+    // --- Polling lokasi dari cookie ---
     useEffect(() => {
         const initialLoc = getUserLocationFromCookie();
         lastLocationRef.current = initialLoc;
@@ -91,9 +100,13 @@ export default function ProductDetailPageContent({ product }: ProductDetailPageC
         const interval = setInterval(() => {
             const currentLoc = getUserLocationFromCookie();
             const lastLoc = lastLocationRef.current;
+
             const changed =
                 (!lastLoc && currentLoc) ||
-                (lastLoc && currentLoc && (lastLoc.latitude !== currentLoc.latitude || lastLoc.longitude !== currentLoc.longitude));
+                (lastLoc &&
+                    currentLoc &&
+                    (lastLoc.latitude !== currentLoc.latitude ||
+                        lastLoc.longitude !== currentLoc.longitude));
 
             if (changed) {
                 lastLocationRef.current = currentLoc;

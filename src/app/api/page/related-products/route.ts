@@ -7,6 +7,8 @@ export async function GET(request: Request) {
         const categoryIds = searchParams.get("categoryIds");
         const limit = searchParams.get("limit");
         const excludeProductId = searchParams.get("excludeProductId");
+        const latitude = searchParams.get("latitude");
+        const longitude = searchParams.get("longitude");
 
         if (!categoryIds) {
             return NextResponse.json(
@@ -24,6 +26,20 @@ export async function GET(request: Request) {
             );
         }
 
+        // Validate latitude & longitude if provided
+        let lat = 0.0;
+        let lng = 0.0;
+        if (latitude !== null && longitude !== null) {
+            lat = parseFloat(latitude);
+            lng = parseFloat(longitude);
+            if (isNaN(lat) || isNaN(lng)) {
+                return NextResponse.json(
+                    { error: "'latitude' and 'longitude' must be valid numbers" },
+                    { status: 400 }
+                );
+            }
+        }
+
         const BE_API = process.env.BE_API; // e.g. "http://127.0.0.1:8002/api/v1/"
         if (!BE_API) {
             return NextResponse.json(
@@ -39,9 +55,12 @@ export async function GET(request: Request) {
 
         const backendUrl = new URL(backendPath, baseUrl);
 
+        // Set required & optional params
         backendUrl.searchParams.set("categoryIds", categoryIds);
-        if (limit) {
-            backendUrl.searchParams.set("limit", limit);
+        if (limit) backendUrl.searchParams.set("limit", limit);
+        if (latitude !== null && longitude !== null) {
+            backendUrl.searchParams.set("latitude", latitude);
+            backendUrl.searchParams.set("longitude", longitude);
         }
 
         console.log("Proxying to backend:", backendUrl.toString());
@@ -49,10 +68,12 @@ export async function GET(request: Request) {
         const backendRes = await fetch(backendUrl.toString(), {
             method: "GET",
             headers: { "Accept": "application/json" },
+            // Optional: set timeout or cache behavior if needed
         });
 
         if (!backendRes.ok) {
             const errorText = await backendRes.text();
+            console.error("Backend error response:", errorText);
             return NextResponse.json(
                 { error: "Backend request failed", details: errorText },
                 { status: backendRes.status }
