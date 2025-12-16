@@ -5,11 +5,13 @@ import pageService from "@/services/page_service";
 import LayoutTemplate from "@/components/layout";
 import ScrollableSectionClient from "@/components/scrollable_section_client";
 import { ProductDetailItem, ProductItem } from "@/types/product";
+import Link from "next/link";
 
 interface Section {
     section_id: number;
     title: string;
     subtitle: string;
+    url: string;
     products?: ProductItem[] | null;
 }
 
@@ -130,9 +132,12 @@ export default function ProductDetailPageContent({ product }: ProductDetailPageC
                                         Discover similar items you might also like
                                     </p>
                                 </div>
-                                <button className="text-red-700 text-sm font-medium flex items-center gap-1 whitespace-nowrap hover:underline">
+                                <Link
+                                    href="/related-products"
+                                    className="text-red-700 text-sm font-medium flex items-center gap-1 whitespace-nowrap hover:underline"
+                                >
                                     View All →
-                                </button>
+                                </Link>
                             </div>
                             <ScrollableSectionClient products={relatedProducts} imagePrefixUrl={imagePrefixUrl} />
                         </div>
@@ -154,9 +159,12 @@ export default function ProductDetailPageContent({ product }: ProductDetailPageC
                                     <h2 className="text-2xl font-bold text-gray-900">{section.title}</h2>
                                     <p className="text-sm text-gray-600 mt-1">{section.subtitle}</p>
                                 </div>
-                                <button className="text-red-700 text-sm font-medium flex items-center gap-1 whitespace-nowrap hover:underline">
+                                <Link
+                                    href={section.url}
+                                    className="text-red-700 text-sm font-medium flex items-center gap-1 whitespace-nowrap hover:underline"
+                                >
                                     View All →
-                                </button>
+                                </Link>
                             </div>
                             <ScrollableSectionClient products={section.products} imagePrefixUrl={imagePrefixUrl} />
                         </LayoutTemplate>

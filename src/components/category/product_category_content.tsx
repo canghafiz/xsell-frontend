@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { ProductItem, ByCategoryProductApiResponse } from '@/types/product';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import {ByCategoryProductApiResponse, ProductItem} from '@/types/product';
 import ProductCard from '@/components/product_card';
 import LayoutTemplate from "@/components/layout";
-import { subCategoryService } from '@/services/sub_category_service';
-import { formatCurrency, getCurrencySymbol } from '@/helpers/currency';
+import {subCategoryService} from '@/services/sub_category_service';
+import {formatCurrency, getCurrencySymbol} from '@/helpers/currency';
 
 interface ProductCategoryContentProps {
     initialProducts: ByCategoryProductApiResponse;
@@ -133,18 +133,29 @@ export default function ProductCategoryContent({
         }
     }, [categorySlug, selectedSubCategories, sortBy, minPrice, maxPrice]);
 
-    // Polling for location changes
+    // 🔁 NEW: Reset to page 1 when sortBy changes
     useEffect(() => {
-        // Initial fetch
-        const initialLoc = getUserLocationFromCookie();
-        lastLocationRef.current = initialLoc;
+        applyFilters(0);
+    }, [sortBy, applyFilters]);
+
+    // 🔁 NEW: Reset to page 1 when price range changes
+    useEffect(() => {
+        applyFilters(0);
+    }, [minPrice, maxPrice, applyFilters]);
+
+    // 🔁 NEW: Reset to page 1 when subcategories change
+    useEffect(() => {
+        applyFilters(0);
+    }, [selectedSubCategories, applyFilters]);
+
+    // Polling for location changes (does NOT include sortBy/price/subcat in deps)
+    useEffect(() => {
+        lastLocationRef.current = getUserLocationFromCookie();
         applyFilters(0);
 
-        // Polling every second to detect cookie changes
         const interval = setInterval(() => {
             const currentLoc = getUserLocationFromCookie();
 
-            // Only fetch if location changed
             const lastLoc = lastLocationRef.current;
             const changed =
                 (!lastLoc && currentLoc) ||
@@ -160,55 +171,11 @@ export default function ProductCategoryContent({
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [categorySlug, selectedSubCategories, sortBy, minPrice, maxPrice, applyFilters]);
+    }, [categorySlug, applyFilters]); // Only deps that should trigger polling
 
     const loadMore = async () => {
         if (isLoading || !hasMore) return;
-        setIsLoading(true);
-
-        try {
-            const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-            const queryParams = new URLSearchParams();
-
-            queryParams.append('categorySlug', categorySlug);
-            selectedSubCategories.forEach(slug => queryParams.append('subCategorySlug', slug));
-            queryParams.append('sortBy', sortBy);
-            queryParams.append('minPrice', minPrice || '0');
-            queryParams.append('maxPrice', maxPrice || '999999999');
-            queryParams.append('limit', LIMIT.toString());
-            queryParams.append('offset', offset.toString());
-
-            // Add location if available
-            const loc = getUserLocationFromCookie();
-            if (loc) {
-                queryParams.append('latitude', loc.latitude.toString());
-                queryParams.append('longitude', loc.longitude.toString());
-            }
-
-            const res = await fetch(`${baseUrl}/api/product/category?${queryParams}`);
-            const data: ByCategoryProductApiResponse = await res.json();
-
-            if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
-                const existingIds = new Set(products.map(p => p.product_id));
-                const newProducts = data.data.filter(p => !existingIds.has(p.product_id));
-
-                if (newProducts.length > 0) {
-                    setProducts(prev => [...prev, ...newProducts]);
-                    setOffset(prev => prev + LIMIT);
-                }
-
-                if (data.data.length < LIMIT) {
-                    setHasMore(false);
-                }
-            } else {
-                setHasMore(false);
-            }
-        } catch (error) {
-            console.error('Failed to load more products:', error);
-            setHasMore(false);
-        } finally {
-            setIsLoading(false);
-        }
+        await applyFilters(offset);
     };
 
     const renderEmptyState = () => {
