@@ -1,21 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-    const searchParams = request.nextUrl.searchParams;
+    const { searchParams } = new URL(request.url);
 
-    const categorySlug = searchParams.get('categorySlug');
-    const subCategorySlugs = searchParams.getAll('subCategorySlug');
-    const sortBy = searchParams.get('sortBy');
-    const minPrice = searchParams.get('minPrice');
-    const maxPrice = searchParams.get('maxPrice');
-    const limit = searchParams.get('limit');
-    const offset = searchParams.get('offset') || '0';
+    const categorySlug = searchParams.get("categorySlug");
+    const subCategorySlugs = searchParams.getAll("subCategorySlug");
+    const sortBy = searchParams.get("sortBy");
+    const minPrice = searchParams.get("minPrice");
+    const maxPrice = searchParams.get("maxPrice");
+    const limit = searchParams.get("limit");
+    const offset = searchParams.get("offset") || "0";
 
     if (!categorySlug) {
         return NextResponse.json(
             { success: false, code: 400, error: "categorySlug is required" },
             { status: 400 }
         );
+    }
+
+    /** ===============================
+     *  Ambil latitude & longitude
+     *  =============================== */
+    let latitude = searchParams.get("latitude");
+    let longitude = searchParams.get("longitude");
+
+    // fallback ke cookie user_location
+    if ((!latitude || !longitude) && request.headers.get("cookie")) {
+        const cookieHeader = request.headers.get("cookie")!;
+        const match = cookieHeader.match(/user_location=([^;]+)/);
+
+        if (match) {
+            try {
+                const decoded = decodeURIComponent(match[1]);
+                const loc = JSON.parse(decoded);
+                if (loc.latitude && loc.longitude) {
+                    latitude = String(loc.latitude);
+                    longitude = String(loc.longitude);
+                }
+            } catch (err) {
+                console.error("Failed to parse user_location cookie:", err);
+            }
+        }
     }
 
     const BE_API = process.env.BE_API;
@@ -26,32 +51,36 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    const queryParams = new URLSearchParams();
+    /** ===============================
+     *  Build backend URL
+     *  =============================== */
+    const baseUrl = BE_API.endsWith("/") ? BE_API : BE_API + "/";
+    const backendUrl = new URL("member/product/category", baseUrl);
 
-    // Append required categorySlug
-    queryParams.append('categorySlug', categorySlug);
+    // required
+    backendUrl.searchParams.set("categorySlug", categorySlug);
 
-    // Append ALL subCategorySlug values (if any)
+    // multiple subCategorySlug
     for (const slug of subCategorySlugs) {
-        queryParams.append('subCategorySlug', slug);
+        backendUrl.searchParams.append("subCategorySlug", slug);
     }
 
-    // Append other optional params
-    if (sortBy) queryParams.append('sortBy', sortBy);
-    if (minPrice) queryParams.append('minPrice', minPrice);
-    if (maxPrice) queryParams.append('maxPrice', maxPrice);
-    if (limit) queryParams.append('limit', limit);
-    queryParams.append('offset', offset);
+    // optional params
+    if (sortBy) backendUrl.searchParams.set("sortBy", sortBy);
+    if (minPrice) backendUrl.searchParams.set("minPrice", minPrice);
+    if (maxPrice) backendUrl.searchParams.set("maxPrice", maxPrice);
+    if (limit) backendUrl.searchParams.set("limit", limit);
+    backendUrl.searchParams.set("offset", offset);
 
-    const backendUrl = `${BE_API}member/product/category?${queryParams.toString()}`;
+    // latitude & longitude
+    if (latitude) backendUrl.searchParams.set("latitude", latitude);
+    if (longitude) backendUrl.searchParams.set("longitude", longitude);
 
     try {
-        const backendRes = await fetch(backendUrl, {
+        const backendRes = await fetch(backendUrl.toString(), {
             method: "GET",
-            headers: {
-                "Accept": "application/json",
-            },
-            cache: 'no-store',
+            headers: { Accept: "application/json" },
+            cache: "no-store",
         });
 
         const rawText = await backendRes.text();

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ProductItem, ByCategoryProductApiResponse } from '@/types/product';
 import ProductCard from '@/components/product_card';
 import LayoutTemplate from "@/components/layout";
 import { subCategoryService } from '@/services/sub_category_service';
+import { formatCurrency, getCurrencySymbol } from '@/helpers/currency';
 
 interface ProductCategoryContentProps {
     initialProducts: ByCategoryProductApiResponse;
@@ -32,6 +33,24 @@ export default function ProductCategoryContent({
 
     const [subCategories, setSubCategories] = useState<{ sub_category_id: number; sub_category_name: string; sub_category_slug: string }[]>([]);
 
+    // Keep track of last known location
+    const lastLocationRef = useRef<{ latitude: number; longitude: number } | null>(null);
+
+    // Function to read user_location cookie
+    const getUserLocationFromCookie = (): { latitude: number; longitude: number } | null => {
+        const cookieMatch = document.cookie.match(/user_location=([^;]+)/);
+        if (!cookieMatch) return null;
+        try {
+            const loc = JSON.parse(decodeURIComponent(cookieMatch[1]));
+            if (loc.latitude && loc.longitude) {
+                return { latitude: loc.latitude, longitude: loc.longitude };
+            }
+        } catch (err) {
+            console.error("Failed to parse user_location cookie:", err);
+        }
+        return null;
+    };
+
     // Sync subcategory to URL
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -55,85 +74,6 @@ export default function ProductCategoryContent({
         fetchSubCategories();
     }, [categorySlug]);
 
-    // Currency formatting
-    const formatCurrency = (amount: number): string => {
-        const currencyCode = (process.env.NEXT_PUBLIC_CURRENCY?.trim() || 'IDR').toUpperCase();
-        const zeroDecimalCurrencies = new Set([
-            'BHD', 'CLP', 'COP', 'CRC', 'DJF', 'GNF', 'ISK', 'JPY', 'KMF', 'KRW',
-            'LYD', 'MGA', 'PYG', 'RWF', 'UGX', 'UYI', 'VND', 'XAF', 'XOF', 'XPF',
-            'IDR', 'HUF', 'TND', 'KWD', 'OMR'
-        ]);
-        const currencyLocaleMap: Record<string, string> = {
-            IDR: 'id-ID',
-            USD: 'en-US',
-            EUR: 'de-DE',
-            GBP: 'en-GB',
-            JPY: 'ja-JP',
-            CNY: 'zh-CN',
-            INR: 'en-IN',
-            KRW: 'ko-KR',
-            BRL: 'pt-BR',
-            MXN: 'es-MX',
-            CAD: 'en-CA',
-            AUD: 'en-AU',
-            NZD: 'en-NZ',
-            CHF: 'de-CH',
-            RUB: 'ru-RU',
-            TRY: 'tr-TR',
-            ZAR: 'en-ZA',
-        };
-        const locale = currencyLocaleMap[currencyCode] || 'en-US';
-
-        try {
-            return new Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency: currencyCode,
-                minimumFractionDigits: zeroDecimalCurrencies.has(currencyCode) ? 0 : 2,
-                maximumFractionDigits: zeroDecimalCurrencies.has(currencyCode) ? 0 : 2,
-            }).format(amount);
-        } catch (error) {
-            console.warn(`Unsupported or invalid currency code: ${currencyCode}`, error);
-            return `${amount.toLocaleString(locale)} ${currencyCode}`;
-        }
-    };
-
-    const getCurrencySymbol = (): string => {
-        const currencyCode = (process.env.NEXT_PUBLIC_CURRENCY?.trim() || 'IDR').toUpperCase();
-        const currencyLocaleMap: Record<string, string> = {
-            IDR: 'id-ID',
-            USD: 'en-US',
-            EUR: 'de-DE',
-            GBP: 'en-GB',
-            JPY: 'ja-JP',
-            CNY: 'zh-CN',
-            INR: 'en-IN',
-            KRW: 'ko-KR',
-            BRL: 'pt-BR',
-            MXN: 'es-MX',
-            CAD: 'en-CA',
-            AUD: 'en-AU',
-            NZD: 'en-NZ',
-            CHF: 'de-CH',
-            RUB: 'ru-RU',
-            TRY: 'tr-TR',
-            ZAR: 'en-ZA',
-        };
-        const locale = currencyLocaleMap[currencyCode] || 'en-US';
-
-        try {
-            const formatted = new Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency: currencyCode,
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-            }).format(0);
-            return formatted.replace(/[\d\s,.]/g, '').trim();
-        } catch (error) {
-            console.log(error);
-            return currencyCode;
-        }
-    };
-
     const LIMIT = 21;
 
     const applyFilters = useCallback(async (newOffset = 0) => {
@@ -149,6 +89,13 @@ export default function ProductCategoryContent({
             queryParams.append('maxPrice', maxPrice || '999999999');
             queryParams.append('limit', LIMIT.toString());
             queryParams.append('offset', newOffset.toString());
+
+            // Add location if available
+            const loc = getUserLocationFromCookie();
+            if (loc) {
+                queryParams.append('latitude', loc.latitude.toString());
+                queryParams.append('longitude', loc.longitude.toString());
+            }
 
             const res = await fetch(`${baseUrl}/api/product/category?${queryParams}`);
             const data: ByCategoryProductApiResponse = await res.json();
@@ -186,16 +133,34 @@ export default function ProductCategoryContent({
         }
     }, [categorySlug, selectedSubCategories, sortBy, minPrice, maxPrice]);
 
-    // Apply filter on sort or subcategory change
+    // Polling for location changes
     useEffect(() => {
+        // Initial fetch
+        const initialLoc = getUserLocationFromCookie();
+        lastLocationRef.current = initialLoc;
         applyFilters(0);
-    }, [sortBy, selectedSubCategories, applyFilters]);
 
-    // Debounced price filter
-    useEffect(() => {
-        const timer = setTimeout(() => applyFilters(0), 500);
-        return () => clearTimeout(timer);
-    }, [minPrice, maxPrice, applyFilters]);
+        // Polling every second to detect cookie changes
+        const interval = setInterval(() => {
+            const currentLoc = getUserLocationFromCookie();
+
+            // Only fetch if location changed
+            const lastLoc = lastLocationRef.current;
+            const changed =
+                (!lastLoc && currentLoc) ||
+                (lastLoc &&
+                    currentLoc &&
+                    (lastLoc.latitude !== currentLoc.latitude ||
+                        lastLoc.longitude !== currentLoc.longitude));
+
+            if (changed) {
+                lastLocationRef.current = currentLoc;
+                applyFilters(0);
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [categorySlug, selectedSubCategories, sortBy, minPrice, maxPrice, applyFilters]);
 
     const loadMore = async () => {
         if (isLoading || !hasMore) return;
@@ -212,6 +177,13 @@ export default function ProductCategoryContent({
             queryParams.append('maxPrice', maxPrice || '999999999');
             queryParams.append('limit', LIMIT.toString());
             queryParams.append('offset', offset.toString());
+
+            // Add location if available
+            const loc = getUserLocationFromCookie();
+            if (loc) {
+                queryParams.append('latitude', loc.latitude.toString());
+                queryParams.append('longitude', loc.longitude.toString());
+            }
 
             const res = await fetch(`${baseUrl}/api/product/category?${queryParams}`);
             const data: ByCategoryProductApiResponse = await res.json();
@@ -288,7 +260,7 @@ export default function ProductCategoryContent({
                 </button>
             </div>
 
-            <div className="z-9999 flex gap-6 relative">
+            <div className="flex gap-6 relative">
                 {/* Sidebar */}
                 <aside className={`
                     fixed lg:static 

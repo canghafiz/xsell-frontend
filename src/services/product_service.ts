@@ -51,8 +51,20 @@ class ProductService {
         maxPrice?: number;
         limit?: number;
         offset?: number;
+        latitude?: number;
+        longitude?: number;
     }): Promise<ByCategoryProductApiResponse> {
-        const { categorySlug, subCategorySlug, sortBy, minPrice, maxPrice, limit, offset } = params;
+        const {
+            categorySlug,
+            subCategorySlug,
+            sortBy,
+            minPrice,
+            maxPrice,
+            limit,
+            offset,
+            latitude,
+            longitude,
+        } = params;
 
         if (!categorySlug) {
             return {
@@ -62,49 +74,43 @@ class ProductService {
             };
         }
 
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+        const baseUrl =
+            process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
         const queryParams = new URLSearchParams();
 
-        queryParams.append('categorySlug', categorySlug);
+        queryParams.set("categorySlug", categorySlug);
 
-        if (subCategorySlug && subCategorySlug.length > 0) {
-            for (const slug of subCategorySlug) {
-                queryParams.append('subCategorySlug', slug);
-            }
-        }
+        subCategorySlug?.forEach(slug =>
+            queryParams.append("subCategorySlug", slug)
+        );
 
-        if (sortBy) queryParams.append('sortBy', sortBy);
-        if (minPrice !== undefined) queryParams.append('minPrice', minPrice.toString());
-        if (maxPrice !== undefined) queryParams.append('maxPrice', maxPrice.toString());
-        if (limit !== undefined) queryParams.append('limit', limit.toString());
-        if (offset !== undefined) queryParams.append('offset', offset.toString());
+        if (sortBy) queryParams.set("sortBy", sortBy);
+        if (minPrice !== undefined)
+            queryParams.set("minPrice", minPrice.toString());
+        if (maxPrice !== undefined)
+            queryParams.set("maxPrice", maxPrice.toString());
+        if (limit !== undefined)
+            queryParams.set("limit", limit.toString());
+        if (offset !== undefined)
+            queryParams.set("offset", offset.toString());
+
+        if (latitude !== undefined)
+            queryParams.set("latitude", latitude.toString());
+        if (longitude !== undefined)
+            queryParams.set("longitude", longitude.toString());
 
         const url = `${baseUrl}/api/product/category?${queryParams.toString()}`;
 
         try {
             const res = await fetch(url, {
                 method: "GET",
-                headers: { "Accept": "application/json" },
-                cache: 'no-store',
+                headers: { Accept: "application/json" },
+                cache: "no-store",
             });
 
-            if (!res.ok) {
-                try {
-                    const errorData = await res.json();
-                    return errorData as ByCategoryProductApiResponse;
-                } catch {
-                    return {
-                        success: false,
-                        code: res.status,
-                        error: "Failed to fetch products by category",
-                    };
-                }
-            }
-
-            const data = await res.json();
-            return data as ByCategoryProductApiResponse;
-        } catch (error) {
-            console.error("Product category fetch error:", error);
+            return await res.json();
+        } catch (err) {
+            console.error("Product category fetch error:", err);
             return {
                 success: false,
                 code: 500,

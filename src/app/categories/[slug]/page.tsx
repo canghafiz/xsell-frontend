@@ -1,4 +1,5 @@
 import { type Metadata } from "next";
+import { cookies } from "next/headers";
 import HeaderCategories from "@/components/header_category";
 import Footer from "@/components/footer";
 import { productService } from "@/services/product_service";
@@ -9,6 +10,29 @@ const formatSlugToTitle = (slug: string): string =>
         .split("-")
         .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
         .join(" ");
+
+// Helper function to get location from cookie
+async function getUserLocationFromCookie(): Promise<{
+    latitude: number;
+    longitude: number;
+} | null> {
+    const cookieStore = await cookies();
+    const userLocationCookie = cookieStore.get("user_location");
+    if (!userLocationCookie?.value) return null;
+
+    try {
+        const loc = JSON.parse(decodeURIComponent(userLocationCookie.value));
+        if (loc.latitude && loc.longitude) {
+            return {
+                latitude: loc.latitude,
+                longitude: loc.longitude,
+            };
+        }
+    } catch (err) {
+        console.error("Failed to parse user_location cookie:", err);
+    }
+    return null;
+}
 
 export async function generateMetadata({
                                            params,
@@ -28,7 +52,7 @@ export async function generateMetadata({
         title,
         description,
         keywords: `${categoryName}, online shopping, ${appName}`,
-        authors: [{ name: "Bebaserror" }],
+        authors: [{ name: process.env.NEXT_PUBLIC_APP_NAME || "XSELL" }],
         openGraph: {
             title,
             description,
@@ -57,36 +81,56 @@ export default async function CategoryPage({
     const { slug } = await params;
     const sp = await searchParams;
 
-    // Normalize subCategorySlug to string[]
     let subCategorySlugs: string[] = [];
     if (sp.subCategorySlug) {
-        if (Array.isArray(sp.subCategorySlug)) {
-            subCategorySlugs = sp.subCategorySlug;
-        } else {
-            subCategorySlugs = [sp.subCategorySlug];
-        }
+        subCategorySlugs = Array.isArray(sp.subCategorySlug)
+            ? sp.subCategorySlug
+            : [sp.subCategorySlug];
     }
 
-    const initialProducts = await productService.getByCategory({
+    // Get user location from cookie (server-side)
+    const userLocation = await getUserLocationFromCookie();
+
+    // Build params with proper typing
+    interface ProductParams {
+        categorySlug: string;
+        subCategorySlug: string[];
+        sortBy: string;
+        minPrice: number;
+        maxPrice: number;
+        limit: number;
+        latitude?: number;
+        longitude?: number;
+    }
+
+    const productParams: ProductParams = {
         categorySlug: slug,
         subCategorySlug: subCategorySlugs,
-        sortBy: 'price_desc',
+        sortBy: "price_desc",
         minPrice: 0,
         maxPrice: 9999999999,
         limit: 21,
-    });
+    };
 
-    const imagePrefixUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "";
+    // Add location if exists
+    if (userLocation) {
+        productParams.latitude = userLocation.latitude;
+        productParams.longitude = userLocation.longitude;
+    }
+
+    const initialProducts = await productService.getByCategory(productParams);
 
     return (
         <>
             <HeaderCategories />
-            <main className="min-h-screen mt-48 md:mt-36">
+            <main className="min-h-screen mt-56 md:mt-36">
                 <ProductCategoryContent
                     initialProducts={initialProducts}
                     categorySlug={slug}
                     subCategorySlug={subCategorySlugs}
-                    imagePrefixUrl={imagePrefixUrl}
+                    imagePrefixUrl={
+                        process.env.NEXT_PUBLIC_STORAGE_URL || ""
+                    }
                 />
             </main>
             <Footer />
