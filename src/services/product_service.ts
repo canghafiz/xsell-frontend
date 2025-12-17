@@ -1,6 +1,53 @@
-import {ByCategoryProductApiResponse, ProductDetailApiResponse} from "@/types/product";
+import {
+    ByCategoryProductApiResponse,
+    ProductDetailApiResponse,
+    ProductSearchApiResponse
+} from "@/types/product";
 
 class ProductService {
+    async search(
+        key: string,
+        params?: Record<string, string | number | string[]>
+    ): Promise<ProductSearchApiResponse> {
+        try {
+            const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
+            if (!baseUrl) {
+                throw new Error("NEXT_PUBLIC_SITE_URL is not defined");
+            }
+
+            const allParams = { title: key, ...(params || {}) };
+            const queryString = new URLSearchParams();
+
+            for (const [name, value] of Object.entries(allParams)) {
+                if (Array.isArray(value)) {
+                    value.forEach(v => v != null && queryString.append(name, String(v)));
+                } else if (value != null && value !== "") {
+                    queryString.append(name, String(value));
+                }
+            }
+
+            const url = `${baseUrl}/api/product/search?${queryString.toString()}`;
+
+            console.log("🔍 Calling search API (server):", url);
+
+            const response = await fetch(url, {
+                method: "GET",
+                headers: { "Accept": "application/json" },
+                next: { revalidate: 60 },
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                console.error("API error:", response.status, text);
+                return { success: false, code: response.status, data: [] };
+            }
+
+            return (await response.json()) as ProductSearchApiResponse;
+        } catch (error) {
+            console.error("Search failed:", error);
+            return { success: false, code: 500, data: [] };
+        }
+    }
     async getDetailBySlug(slug: string): Promise<ProductDetailApiResponse> {
         if (!slug) {
             return {

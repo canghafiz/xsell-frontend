@@ -53,12 +53,11 @@ export default function ProductDetailPageContent({ product }: ProductDetailPageC
         const pageSlug = "detail";
         pageParams.except_id = product.product_id;
 
-        // --- Related products params (sesuai permintaanmu) ---
         const categoryIds = product.sub_category?.category?.category_id;
         const relatedParams = categoryIds
             ? {
-                categoryIds, // tetap sebagai number
-                limit: 10,   // ubah jadi 10 seperti contoh URL-mu
+                categoryIds,
+                limit: 10,
                 excludeProductId: product.product_id,
                 // Tambahkan latitude & longitude jika ada
                 ...(loc && {
@@ -93,7 +92,6 @@ export default function ProductDetailPageContent({ product }: ProductDetailPageC
         }
     }, [product]);
 
-    // --- Polling lokasi dari cookie ---
     useEffect(() => {
         const initialLoc = getUserLocationFromCookie();
         lastLocationRef.current = initialLoc;
@@ -132,12 +130,6 @@ export default function ProductDetailPageContent({ product }: ProductDetailPageC
                                         Discover similar items you might also like
                                     </p>
                                 </div>
-                                <Link
-                                    href="/related-products"
-                                    className="text-red-700 text-sm font-medium flex items-center gap-1 whitespace-nowrap hover:underline"
-                                >
-                                    View All →
-                                </Link>
                             </div>
                             <ScrollableSectionClient products={relatedProducts} imagePrefixUrl={imagePrefixUrl} />
                         </div>

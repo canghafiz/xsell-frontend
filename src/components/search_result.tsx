@@ -4,49 +4,43 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { categoryService } from '@/services/category_service';
 import type { CategoryWithSubCategory, WithSubCategoryItem } from '@/types/category';
-import type { ProductItem, ProductBySectionApiResponse } from '@/types/product';
+import type { ProductItem } from '@/types/product';
 import { formatCurrency, getCurrencySymbol } from "@/helpers/currency";
 import LayoutTemplate from "@/components/layout";
 import ProductCard from "@/components/product_card";
-import pageService from "@/services/page_service";
+import { productService } from '@/services/product_service';
 
-interface ProductByPageProps {
-    title: string;
-    sectionKey: string;
+interface SearchResultsProps {
     imagePrefixUrl: string;
 }
 
-export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: ProductByPageProps) {
+export default function SearchResults({ imagePrefixUrl }: SearchResultsProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
-
-    // --- Initialize state from URL parameters (SINGLE SELECTION) ---
+    const initialQuery = searchParams.get('title') || '';
     const initialCategorySlug = searchParams.get('categorySlug') || 'all';
     const initialSubCategorySlug = searchParams.get('subCategorySlug') || 'all';
-    const initialSortBy = searchParams.get('sortBy') || 'default';
+    const initialSortBy = searchParams.get('sortBy') || 'latest';
     const initialMinPrice = searchParams.get('minPrice') || '0';
     const initialMaxPrice = searchParams.get('maxPrice') || '9999999999';
 
-    // --- Component state (SINGLE SELECTION) ---
+    const [query] = useState<string>(initialQuery);
     const [categories, setCategories] = useState<CategoryWithSubCategory[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>(initialCategorySlug);
     const [selectedSubCategory, setSelectedSubCategory] = useState<string>(initialSubCategorySlug);
     const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-    const [minPrice, setMinPrice] = useState<string>(initialMinPrice);
-    const [maxPrice, setMaxPrice] = useState<string>(initialMaxPrice);
-    const [sortBy, setSortBy] = useState<string>(initialSortBy);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-    // --- Product state ---
     const [products, setProducts] = useState<ProductItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [currentLimit, setCurrentLimit] = useState(21);
     const [hasMore, setHasMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [minPrice, setMinPrice] = useState<string>(initialMinPrice);
+    const [maxPrice, setMaxPrice] = useState<string>(initialMaxPrice);
+    const [sortBy, setSortBy] = useState<string>(initialSortBy);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const LIMIT_INCREMENT = 21;
 
-    // --- Ref to track location changes ---
     const lastLocationRef = useRef<{ latitude: number; longitude: number } | null>(null);
 
     const getUserLocationFromCookie = useCallback((): { latitude: number; longitude: number } | null => {
@@ -77,56 +71,49 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
         loadCategories();
     }, [initialCategorySlug]);
 
-    // URL synchronization (SINGLE SELECTION)
+    // Sync to URL
     useEffect(() => {
         const params = new URLSearchParams();
-
+        if (query) params.set('title', query);
         params.set('categorySlug', selectedCategory);
         params.set('subCategorySlug', selectedSubCategory);
-
         if (sortBy !== 'latest') params.set('sortBy', sortBy);
         if (minPrice !== '0') params.set('minPrice', minPrice);
         if (maxPrice !== '9999999999') params.set('maxPrice', maxPrice);
-
         router.replace(`?${params.toString()}`, { scroll: false });
-    }, [
-        selectedCategory,
-        selectedSubCategory,
-        minPrice,
-        maxPrice,
-        sortBy,
-        router
-    ]);
+    }, [query, selectedCategory, selectedSubCategory, sortBy, minPrice, maxPrice, router]);
 
-    // Fetch products function (SINGLE SELECTION)
     const fetchProducts = useCallback(async (limit: number) => {
+        if (!query.trim()) {
+            setProducts([]);
+            setHasMore(false);
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
 
         try {
-            const params: Record<string, string | number> = {
+            const loc = getUserLocationFromCookie();
+            const latitude = loc ? loc.latitude.toString() : "-5.4460713";
+            const longitude = loc ? loc.longitude.toString() : "105.2643742";
+
+            console.log('📤 Fetching products with limit:', limit);
+
+            const response = await productService.search(query.trim(), {
                 categorySlug: selectedCategory,
                 subCategorySlug: selectedSubCategory,
                 sortBy,
-                minPrice: minPrice || '0',
-                maxPrice: maxPrice || '9999999999',
-                limit: limit,
-            };
-
-            // Add location if available
-            const loc = getUserLocationFromCookie();
-            if (loc) {
-                params.latitude = loc.latitude;
-                params.longitude = loc.longitude;
-            }
-
-            console.log('📤 Fetching products with params:', params);
-
-            const response: ProductBySectionApiResponse = await pageService.getBySection(sectionKey, params);
+                minPrice,
+                maxPrice,
+                limit,
+                latitude,
+                longitude,
+            });
 
             console.log('📥 Response received:', response.data?.length, 'products');
 
-            if (response.success && response.data && Array.isArray(response.data)) {
+            if (response.success && response.data) {
                 const newProducts = response.data;
                 const newProductsCount = newProducts.length;
 
@@ -141,45 +128,38 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
                 setCurrentLimit(LIMIT_INCREMENT);
                 setHasMore(false);
                 if (!response.success) {
-                    setError('Failed to load products');
+                    setError('Failed to load products.');
                 }
             }
         } catch (err) {
-            console.error('Failed to fetch products:', err);
-            setError('Failed to load products');
+            console.error('Search failed:', err);
+            setError('Failed to load products.');
             setProducts([]);
             setCurrentLimit(LIMIT_INCREMENT);
             setHasMore(false);
         } finally {
             setIsLoading(false);
         }
-    }, [sectionKey, selectedCategory, selectedSubCategory, sortBy, minPrice, maxPrice, getUserLocationFromCookie]);
+    }, [query, selectedCategory, selectedSubCategory, sortBy, minPrice, maxPrice, getUserLocationFromCookie]);
 
     // Reset to initial limit when filters change
     useEffect(() => {
         fetchProducts(LIMIT_INCREMENT);
     }, [fetchProducts]);
 
-    // Polling for location changes
+    // Location polling
     useEffect(() => {
         lastLocationRef.current = getUserLocationFromCookie();
-
         const interval = setInterval(() => {
             const currentLoc = getUserLocationFromCookie();
             const lastLoc = lastLocationRef.current;
-            const changed =
-                (!lastLoc && currentLoc) ||
-                (lastLoc &&
-                    currentLoc &&
-                    (lastLoc.latitude !== currentLoc.latitude ||
-                        lastLoc.longitude !== currentLoc.longitude));
-
+            const changed = (!lastLoc && currentLoc) ||
+                (lastLoc && currentLoc && (lastLoc.latitude !== currentLoc.latitude || lastLoc.longitude !== currentLoc.longitude));
             if (changed) {
                 lastLocationRef.current = currentLoc;
                 fetchProducts(LIMIT_INCREMENT);
             }
         }, 1000);
-
         return () => clearInterval(interval);
     }, [getUserLocationFromCookie, fetchProducts]);
 
@@ -189,10 +169,10 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
         fetchProducts(newLimit);
     };
 
-    // --- UI Event Handlers (SINGLE SELECTION) ---
+    // Category handlers
     const handleCategoryClick = (slug: string) => {
         setSelectedCategory(slug);
-        setSelectedSubCategory('all'); // Reset to "All" when category changes
+        setSelectedSubCategory('all');
         setExpandedCategories(prev => {
             const newSet = new Set(prev);
             if (newSet.has(slug)) {
@@ -205,9 +185,7 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
         setIsSidebarOpen(false);
     };
 
-    // SINGLE SELECTION - Only one subcategory at a time
     const handleSubCategoryClick = (slug: string) => {
-        console.log('Selected subcategory:', slug);
         setSelectedSubCategory(slug);
         setIsSidebarOpen(false);
     };
@@ -229,16 +207,14 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
                 </div>
             );
         }
-
-        if (products.length === 0 && !isLoading) {
+        if (products.length === 0 && !isLoading && query) {
             return (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
                     <p className="text-gray-600 text-lg mb-2">No products found</p>
-                    <p className="text-gray-500">Try adjusting your filters or check back later</p>
+                    <p className="text-gray-500">Try adjusting your search or filters</p>
                 </div>
             );
         }
-
         return null;
     };
 
@@ -347,7 +323,7 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
                         </div>
                     </div>
 
-                    {/* Categories - SINGLE SELECTION with Radio Buttons */}
+                    {/* Categories */}
                     <div className="mb-6">
                         <h3 className="font-semibold text-lg mb-3">Categories</h3>
                         <div className="space-y-1">
@@ -393,7 +369,6 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
                                         selectedCategory === category.category_slug &&
                                         category.sub_categories && (
                                             <div className="ml-4 mt-1 space-y-1 border-l-2 pl-2">
-                                                {/* "All" option for subcategory */}
                                                 <label
                                                     htmlFor={`subcat-all-${category.category_slug}`}
                                                     className={`flex items-center p-1.5 rounded cursor-pointer transition-colors ${
@@ -414,7 +389,6 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
                                                     <span>All {category.category_name}</span>
                                                 </label>
 
-                                                {/* Individual subcategories */}
                                                 {category.sub_categories.map((sub: WithSubCategoryItem) => (
                                                     <label
                                                         key={sub.sub_category_id}
@@ -463,11 +437,11 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
                     </div>
                 </aside>
 
-                {/* Main Content Area */}
+                {/* Main Content */}
                 <main className="flex-1 mb-2">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 bg-white border border-gray-200 p-4 rounded-lg shadow-sm">
                         <h2 className="text-xl font-semibold text-gray-800">
-                            {title}
+                            Search Results for &#34;{query}&#34;
                             {selectedSubCategory && selectedSubCategory !== 'all' && (
                                 <span className="text-sm font-normal text-gray-500 ml-2">
                                     ({categories
@@ -478,7 +452,7 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
                             )}
                         </h2>
                         <div className="flex items-center gap-3">
-                            <label htmlFor="sort-by-select" className="sr-only">Sort products by</label>
+                            <label htmlFor="sort-by-select" className="sr-only">Sort by</label>
                             <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Sort By:</span>
                             <select
                                 id="sort-by-select"
@@ -486,13 +460,8 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
                                 onChange={(e) => setSortBy(e.target.value)}
                                 className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 min-w-[180px]"
                             >
-                                <option value="default">Default</option>
-                                {title !== "Newly Listed" && (
-                                    <>
-                                        <option value="latest">Latest</option>
-                                        <option value="oldest">Oldest</option>
-                                    </>
-                                )}
+                                <option value="latest">Latest</option>
+                                <option value="oldest">Oldest</option>
                                 <option value="price_asc">Price: Low to High</option>
                                 <option value="price_desc">Price: High to Low</option>
                             </select>
@@ -523,7 +492,7 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
                                             <button
                                                 onClick={loadMoreProducts}
                                                 disabled={isLoading}
-                                                className="cursor-pointer px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+                                                className="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
                                             >
                                                 {isLoading ? 'Loading...' : 'Load More Products'}
                                             </button>

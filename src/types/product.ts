@@ -102,3 +102,9 @@ export interface ProductBySectionApiResponse {
     code: number;
     data?: ProductItem[];
 }
+
+export interface ProductSearchApiResponse {
+    success: boolean;
+    code: number;
+    data: ProductItem[];
+}

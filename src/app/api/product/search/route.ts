@@ -3,36 +3,36 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
+    const title = searchParams.get("title");
     const categorySlug = searchParams.get("categorySlug");
     const subCategorySlugs = searchParams.getAll("subCategorySlug");
     const sortBy = searchParams.get("sortBy");
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
     const limit = searchParams.get("limit");
-    const offset = searchParams.get("offset") || "0";
+    const latitude = searchParams.get("latitude");
+    const longitude = searchParams.get("longitude");
 
-    if (!categorySlug) {
+    if (!title) {
         return NextResponse.json(
-            { success: false, code: 400, error: "categorySlug is required" },
+            { success: false, code: 400, error: "title is required" },
             { status: 400 }
         );
     }
 
-    let latitude = searchParams.get("latitude");
-    let longitude = searchParams.get("longitude");
+    let finalLat = latitude;
+    let finalLng = longitude;
 
-    // fallback ke cookie user_location
-    if ((!latitude || !longitude) && request.headers.get("cookie")) {
+    if ((!finalLat || !finalLng) && request.headers.get("cookie")) {
         const cookieHeader = request.headers.get("cookie")!;
         const match = cookieHeader.match(/user_location=([^;]+)/);
-
         if (match) {
             try {
                 const decoded = decodeURIComponent(match[1]);
                 const loc = JSON.parse(decoded);
                 if (loc.latitude && loc.longitude) {
-                    latitude = String(loc.latitude);
-                    longitude = String(loc.longitude);
+                    finalLat = String(loc.latitude);
+                    finalLng = String(loc.longitude);
                 }
             } catch (err) {
                 console.error("Failed to parse user_location cookie:", err);
@@ -48,30 +48,27 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    /** ===============================
-     *  Build backend URL
-     *  =============================== */
     const baseUrl = BE_API.endsWith("/") ? BE_API : BE_API + "/";
-    const backendUrl = new URL("member/product/category", baseUrl);
+    const backendUrl = new URL("member/product/search", baseUrl);
 
-    // required
-    backendUrl.searchParams.set("categorySlug", categorySlug);
+    backendUrl.searchParams.set("title", title);
 
-    // multiple subCategorySlug
-    for (const slug of subCategorySlugs) {
-        backendUrl.searchParams.append("subCategorySlug", slug);
+    if (categorySlug) {
+        backendUrl.searchParams.set("categorySlug", categorySlug);
     }
 
-    // optional params
+    for (const slug of subCategorySlugs) {
+        if (slug) {
+            backendUrl.searchParams.append("subCategorySlug", slug);
+        }
+    }
+
     if (sortBy) backendUrl.searchParams.set("sortBy", sortBy);
     if (minPrice) backendUrl.searchParams.set("minPrice", minPrice);
     if (maxPrice) backendUrl.searchParams.set("maxPrice", maxPrice);
     if (limit) backendUrl.searchParams.set("limit", limit);
-    backendUrl.searchParams.set("offset", offset);
-
-    // latitude & longitude
-    if (latitude) backendUrl.searchParams.set("latitude", latitude);
-    if (longitude) backendUrl.searchParams.set("longitude", longitude);
+    if (finalLat) backendUrl.searchParams.set("latitude", finalLat);
+    if (finalLng) backendUrl.searchParams.set("longitude", finalLng);
 
     try {
         const backendRes = await fetch(backendUrl.toString(), {
@@ -90,7 +87,7 @@ export async function GET(request: NextRequest) {
                 errorResponse = {
                     success: false,
                     code: backendRes.status,
-                    error: "Products not found or unavailable",
+                    error: "Failed to fetch search results",
                 };
             }
             return NextResponse.json(errorResponse, { status: backendRes.status });
@@ -104,7 +101,7 @@ export async function GET(request: NextRequest) {
         });
     } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
-        console.error("Product Category API error:", msg);
+        console.error("Product Search API error:", msg);
         return NextResponse.json(
             { success: false, code: 500, error: "Internal server error" },
             { status: 500 }
