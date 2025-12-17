@@ -96,3 +96,9 @@ export interface ByCategoryProductApiResponse {
     data?: ProductItem[];
     error?: string;
 }
+
+export interface ProductBySectionApiResponse {
+    success: boolean;
+    code: number;
+    data?: ProductItem[];
+}
