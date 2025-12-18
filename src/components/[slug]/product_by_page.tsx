@@ -277,12 +277,13 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
                 )}
 
                 <aside
-                    className={`fixed lg:static inset-y-0 left-0 w-80 bg-white z-50 lg:z-auto transform transition-transform duration-300 ease-in-out p-4 lg:p-0 overflow-y-auto shadow-xl lg:shadow-none ${
+                    className={`fixed lg:static inset-y-0 left-0 w-80 bg-white z-999 sm:z-50 lg:z-auto transform transition-transform duration-300 ease-in-out p-4 lg:p-0 overflow-y-auto shadow-xl lg:shadow-none ${
                         isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
                     }`}
                 >
                     {/* Mobile Header */}
-                    <div className="lg:hidden flex justify-between items-center mb-6 pb-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+                    <div
+                        className="lg:hidden flex justify-between items-center mb-6 pb-4 border-b border-gray-200 sticky top-0 bg-white z-10">
                         <h2 className="text-xl font-semibold">Filters</h2>
                         <button
                             onClick={() => setIsSidebarOpen(false)}
@@ -290,7 +291,8 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
                             aria-label="Close filters"
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                      d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
@@ -311,7 +313,8 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
                             <div className="flex items-center gap-3">
                                 <div className="flex-1">
                                     <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                                        <span
+                                            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
                                             {getCurrencySymbol()}
                                         </span>
                                         <input
@@ -326,7 +329,8 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
                                 <div className="pt-5 text-gray-400">—</div>
                                 <div className="flex-1">
                                     <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                                        <span
+                                            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
                                             {getCurrencySymbol()}
                                         </span>
                                         <input
@@ -444,28 +448,20 @@ export default function ProductByPage({ title, sectionKey, imagePrefixUrl }: Pro
                         </div>
                     </div>
 
-                    {/* Action Buttons - Mobile Only */}
-                    <div className="lg:hidden mt-6 sticky bottom-0 bg-white pt-4 border-t border-gray-200">
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setIsSidebarOpen(false)}
-                                className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors"
-                            >
-                                Apply Filters
-                            </button>
-                            <button
-                                onClick={resetFilters}
-                                className="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-                            >
-                                Reset
-                            </button>
-                        </div>
+                    <div className="lg:hidden mt-4 mb-4 sticky bottom-0 bg-white pt-4 border-t border-gray-200">
+                        <button
+                            onClick={() => setIsSidebarOpen(false)}
+                            className="w-full bg-red-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors"
+                        >
+                            Apply Filters
+                        </button>
                     </div>
                 </aside>
 
                 {/* Main Content Area */}
                 <main className="flex-1 mb-2">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 bg-white border border-gray-200 p-4 rounded-lg shadow-sm">
+                    <div
+                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 bg-white border border-gray-200 p-4 rounded-lg shadow-sm">
                         <h2 className="text-xl font-semibold text-gray-800">
                             {title}
                             {selectedSubCategory && selectedSubCategory !== 'all' && (

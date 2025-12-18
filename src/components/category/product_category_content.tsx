@@ -232,7 +232,7 @@ export default function ProductCategoryContent({
                 <aside className={`
                     fixed lg:static 
                     top-0 left-0 bottom-0 w-80
-                    bg-white z-50 lg:z-auto
+                    bg-white z-999 sm:z-50 lg:z-auto
                     transition-transform duration-300 ease-in-out
                     ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                     overflow-y-auto shadow-2xl lg:shadow-none p-4 lg:p-0
@@ -355,7 +355,7 @@ export default function ProductCategoryContent({
                 {/* Backdrop */}
                 {isSidebarOpen && (
                     <div
-                        className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                        className="fixed inset-0 bg-black/50 z-99 lg:hidden"
                         onClick={() => setIsSidebarOpen(false)}
                     />
                 )}

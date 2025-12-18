@@ -10,6 +10,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { User } from "@/types/user";
 import DropdownMapLocation from "@/components/map/dropdown_map_location";
 import { useRouter, useSearchParams } from 'next/navigation';
+import Toast from "@/components/toast";
 
 interface HeaderProps {
     children: React.ReactNode;
@@ -22,6 +23,7 @@ export default function Header({ children }: HeaderProps) {
     const [searchValue, setSearchValue] = useState("");
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     // Sync search input with URL parameter
@@ -33,8 +35,18 @@ export default function Header({ children }: HeaderProps) {
     }, [searchParams]);
 
     const handleSellClick = () => {
-        console.log("Sell button clicked!");
+        if (!user) {
+            console.log("user clicked");
+            setToast({
+                type: "error",
+                message: "Please sign in first to start selling."
+            });
+            return;
+        }
+
+        router.push("/product/create");
     };
+
 
     const handleAuthClick = () => {
         setShowAuthModal(true);
@@ -48,9 +60,7 @@ export default function Header({ children }: HeaderProps) {
             const trimmed = searchValue.trim();
             const newUrl = `/search?title=${encodeURIComponent(trimmed)}&categorySlug=all&subCategorySlug=all`;
 
-            // Check if already on search page
             if (window.location.pathname === '/search') {
-                // Reload with new search params
                 window.location.href = newUrl;
             } else {
                 router.push(newUrl);
@@ -76,24 +86,48 @@ export default function Header({ children }: HeaderProps) {
 
     if (loading) {
         return (
-            <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
-                <LayoutTemplate>
-                    <div className="h-16 flex items-center justify-between">
-                        <Brand />
-                        <div className="flex items-center gap-3">
-                            <div className="w-20 h-5 bg-gray-200 rounded animate-pulse"></div>
-                            <PrimaryBtn icon={Plus} title="Sell" onClick={handleSellClick} ariaLabel="Sell" />
+            <>
+                {toast && (
+                    <Toast
+                        type={toast.type}
+                        message={toast.message}
+                        onClose={() => setToast(null)}
+                    />
+                )}
+
+                <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
+                    <LayoutTemplate>
+                        <div className="h-16 flex items-center justify-between">
+                            <Brand />
+                            <div className="flex items-center gap-3">
+                                <div className="w-20 h-5 bg-gray-200 rounded animate-pulse"></div>
+                                <PrimaryBtn
+                                    type="button"
+                                    icon={Plus}
+                                    title="Sell"
+                                    onClick={handleSellClick}
+                                    ariaLabel="Sell"
+                                />
+                            </div>
                         </div>
-                    </div>
-                </LayoutTemplate>
-                <hr className="border-b border-gray-200" />
-                {children}
-            </header>
+                    </LayoutTemplate>
+                    <hr className="border-b border-gray-200" />
+                    {children}
+                </header>
+            </>
         );
     }
 
     return (
         <>
+            {toast && (
+                <Toast
+                    type={toast.type}
+                    message={toast.message}
+                    onClose={() => setToast(null)}
+                />
+            )}
+
             <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
                 <LayoutTemplate>
                     {/* Desktop */}

@@ -253,7 +253,7 @@ export default function SearchResults({ imagePrefixUrl }: SearchResultsProps) {
                 )}
 
                 <aside
-                    className={`fixed lg:static inset-y-0 left-0 w-80 bg-white z-50 lg:z-auto transform transition-transform duration-300 ease-in-out p-4 lg:p-0 overflow-y-auto shadow-xl lg:shadow-none ${
+                    className={`fixed lg:static inset-y-0 left-0 w-80 bg-white z-999 sm:z-50 lg:z-auto transform transition-transform duration-300 ease-in-out p-4 lg:p-0 overflow-y-auto shadow-xl lg:shadow-none ${
                         isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
                     }`}
                 >
@@ -418,22 +418,13 @@ export default function SearchResults({ imagePrefixUrl }: SearchResultsProps) {
                         </div>
                     </div>
 
-                    {/* Action Buttons - Mobile Only */}
-                    <div className="lg:hidden mt-6 sticky bottom-0 bg-white pt-4 border-t border-gray-200">
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setIsSidebarOpen(false)}
-                                className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors"
-                            >
-                                Apply Filters
-                            </button>
-                            <button
-                                onClick={resetFilters}
-                                className="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-                            >
-                                Reset
-                            </button>
-                        </div>
+                    <div className="lg:hidden mt-4 mb-4 sticky bottom-0 bg-white pt-4 border-t border-gray-200">
+                        <button
+                            onClick={() => setIsSidebarOpen(false)}
+                            className="w-full bg-red-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors"
+                        >
+                            Apply Filters
+                        </button>
                     </div>
                 </aside>
 

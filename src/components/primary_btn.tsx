@@ -81,7 +81,7 @@ export default function PrimaryBtn({
             ) : (
                 <Icon className="h-5 w-5" aria-hidden="true" />
             )}
-            <span className="sr-only sm:not-sr-only">
+            <span className="">
                 {loading ? "Loading..." : title}
             </span>
         </button>

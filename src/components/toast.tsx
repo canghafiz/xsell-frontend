@@ -15,7 +15,7 @@ export default function Toast({ message, type, onClose }: ToastProps) {
 
     return (
         <div
-            className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-lg shadow-lg border flex items-center gap-3 animate-slide-in
+            className={`fixed top-5 right-5 z-999999 px-5 py-3 rounded-lg shadow-lg border flex items-center gap-3 animate-slide-in
         ${type === "success" ? "bg-green-100 border-green-300 text-green-700" : "bg-red-100 border-red-300 text-red-700"}
       `}
         >
