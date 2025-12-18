@@ -7,33 +7,33 @@ import {
 
 class CategoryService {
     async getCategories(): Promise<CategoryItem[] | null> {
-        const BE_API = process.env.BE_API;
-
-        if (!BE_API) {
-            console.error("BE_API environment variable is not set");
-            return null;
-        }
-
-        const url = `${BE_API}categories/`;
-
         try {
+            const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
+            if (!baseUrl) {
+                throw new Error("NEXT_PUBLIC_SITE_URL is not defined");
+            }
+
+            const url = `${baseUrl}/api/category`;
+
+
             const res = await fetch(url, {
                 method: "GET",
                 headers: {
-                    "Content-Type": "application/json",
+                    "Accept": "application/json",
                 },
-                next: { revalidate: 3600 }, // Cache 1 hour
+                next: { revalidate: 3600 * 24 },
             });
 
             if (!res.ok) {
-                console.error(`Failed to fetch categories:`, res.status);
+                const text = await res.text();
+                console.error("Failed to fetch categories:", res.status, text);
                 return null;
             }
 
             const data: CategoriesApiResponse = await res.json();
 
             if (!data?.data || !Array.isArray(data.data)) {
-                console.error("Invalid banner response structure", data);
+                console.error("Invalid categories response structure", data);
                 return null;
             }
 
@@ -43,6 +43,7 @@ class CategoryService {
             return null;
         }
     }
+
     async getCategoriesWithSub(): Promise<CategoryWithSubCategory[] | null> {
         const url = `/api/category/withSub`;
 

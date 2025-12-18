@@ -2,7 +2,7 @@ import { categoryService } from '@/services/category_service';
 import * as LucideIcons from 'lucide-react';
 import Link from 'next/link';
 import { ComponentType } from 'react';
-import SlideButtons from './slide_buttons'; // ← kita buat ini
+import SlideButtons from './slide_buttons';
 
 export default async function Categories() {
     const categories = await categoryService.getCategories();

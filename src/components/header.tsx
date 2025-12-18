@@ -36,7 +36,6 @@ export default function Header({ children }: HeaderProps) {
 
     const handleSellClick = () => {
         if (!user) {
-            console.log("user clicked");
             setToast({
                 type: "error",
                 message: "Please sign in first to start selling."
@@ -44,7 +43,7 @@ export default function Header({ children }: HeaderProps) {
             return;
         }
 
-        router.push("/product/create");
+        router.push("/post");
     };
 
 
