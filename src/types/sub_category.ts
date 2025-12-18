@@ -8,5 +8,5 @@ export interface SubCategoryItem {
 export interface SubCategoriesApiResponse {
     success: boolean;
     code: number;
-    data: SubCategoryItem[] | string;
+    data?: SubCategoryItem[];
 }

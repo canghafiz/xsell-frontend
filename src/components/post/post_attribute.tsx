@@ -4,6 +4,7 @@ import LayoutTemplate from "@/components/layout";
 import TopPost from "@/components/post/top_post";
 import Toast from "@/components/toast";
 import {useState} from "react";
+import PostListingForm from "@/components/post/post_listing_form";
 
 export default function PostAttribute() {
     const [toast, setToast] = useState<{
@@ -28,13 +29,7 @@ export default function PostAttribute() {
             )}
 
             <TopPost onCLickNext={onClickNext} />
-
-            <div className="mb-6">
-                <h2 className="text-xl font-semibold mb-4">
-                    Select Category
-                </h2>
-
-            </div>
+            <PostListingForm/>
         </LayoutTemplate>
     );
 }

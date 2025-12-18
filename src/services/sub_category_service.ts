@@ -6,7 +6,7 @@ class SubCategoryService {
             return {
                 success: false,
                 code: 400,
-                data: "Slug is required",
+                data: [],
             };
         }
 
@@ -28,7 +28,7 @@ class SubCategoryService {
                     return {
                         success: false,
                         code: res.status,
-                        data: "Failed to fetch subcategories",
+                        data: [],
                     };
                 }
             }
@@ -40,7 +40,7 @@ class SubCategoryService {
             return {
                 success: false,
                 code: 500,
-                data: "Network error",
+                data: [],
             };
         }
     }
