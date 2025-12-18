@@ -58,7 +58,6 @@ export async function generateMetadata({
             description,
             url: canonical,
             siteName: appName,
-            locale: "en_US",
             type: "website",
         },
         twitter: {
