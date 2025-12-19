@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { SubCategoryItem } from '@/types/sub_category';
 import { ProductSpecItem } from '@/types/product_spec';
 import subCategoryService from '@/services/sub_category_service';
 import cookiesService from '@/services/cookies_service';
 import productSpecService from '@/services/product_spec_service';
+import PostLocation from "@/components/post/post_location";
+import {usePostStore} from "@/stores/post_store";
 
 export default function PostListingForm() {
     const [images, setImages] = useState<File[]>([]);
@@ -15,6 +17,7 @@ export default function PostListingForm() {
     const [productSpecs, setProductSpecs] = useState<ProductSpecItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingSpecs, setLoadingSpecs] = useState(false);
+    const { category } = usePostStore();
 
     const [formData, setFormData] = useState({
         subCategoryId: '',
@@ -32,7 +35,25 @@ export default function PostListingForm() {
     const imageSliderRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        if (category === '') {
+            cookiesService.clearCookie('post_category');
+            window.history.back()
+            return
+        }
+
         loadSubCategories();
+    }, [category]);
+
+    useEffect(() => {
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+            event.preventDefault()
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
     }, []);
 
     const loadSubCategories = async () => {
@@ -309,17 +330,7 @@ export default function PostListingForm() {
             {/* Location Section */}
             <div className="mb-8">
                 <h2 className="text-lg font-semibold text-gray-800 mb-4">Location Details</h2>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                    <select
-                        name="location"
-                        value={formData.location}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                    >
-                        <option value="">-- Select --</option>
-                    </select>
-                </div>
+                <PostLocation/>
             </div>
         </div>
     );

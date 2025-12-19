@@ -5,11 +5,12 @@ import TopPost from '@/components/post/top_post';
 import { useRouter } from 'next/navigation';
 import cookiesService from '@/services/cookies_service';
 import Toast from '@/components/toast';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import CategoryService from '@/services/category_service';
 import * as LucideIcons from 'lucide-react';
 import { CategoryItem } from '@/types/category';
 import { LucideIcon } from 'lucide-react';
+import {usePostStore} from "@/stores/post_store";
 
 // Define the shape of the selected category
 interface SelectedCategory {
@@ -19,6 +20,7 @@ interface SelectedCategory {
 
 export default function CategoryPost() {
     const router = useRouter();
+    const hasCheckedReload = useRef(false);
 
     const [toast, setToast] = useState<{
         type: 'success' | 'error';
@@ -28,6 +30,7 @@ export default function CategoryPost() {
     const [categories, setCategories] = useState<CategoryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState<SelectedCategory | null>(null);
+    const { setCategory } = usePostStore();
 
     /**
      * Restore category from cookie
@@ -35,43 +38,22 @@ export default function CategoryPost() {
     const restoreCategoryFromCookie = () => {
         const savedCookie = cookiesService.getCookie('post_category');
         if (savedCookie) {
-            try {
-                const parsed = JSON.parse(savedCookie) as SelectedCategory;
-                setSelectedCategory(parsed);
-            } catch (e) {
-                console.warn('Failed to parse post_category cookie', e);
-                cookiesService.clearCookie('post_category');
-            }
+            const parsed = JSON.parse(savedCookie) as SelectedCategory;
+            setSelectedCategory(parsed);
         }
     };
 
-    /**
-     * Initial load - check if this is navigation or actual reload
-     */
     useEffect(() => {
+        if (hasCheckedReload.current) return;
+        hasCheckedReload.current = true;
+
         const haveCategory = cookiesService.getCookie('post_category');
 
-        // Check if we just navigated FROM this page
-        const justNavigatedAway = sessionStorage.getItem('navigated_from_category_page');
-
-        if (justNavigatedAway) {
-            // This is a BACK navigation - don't show alert
-            sessionStorage.removeItem('navigated_from_category_page');
-            restoreCategoryFromCookie();
-        } else if (haveCategory) {
-            // No navigation flag = actual reload - show alert
-            const userConfirmed = window.confirm('All unsaved data will be lost');
-
-            if (userConfirmed) {
-                cookiesService.clearCookie('post_category');
-                setSelectedCategory(null);
-            } else {
-                restoreCategoryFromCookie();
-            }
-        } else {
-            // No category - just restore
+        if (haveCategory) {
             restoreCategoryFromCookie();
         }
+
+        sessionStorage.removeItem('just_navigated_to_category');
     }, []);
 
     /**
@@ -102,8 +84,7 @@ export default function CategoryPost() {
      */
     useEffect(() => {
         const handlePopState = () => {
-            // Mark that we're coming back via browser navigation
-            sessionStorage.setItem('navigated_from_category_page', 'true');
+            sessionStorage.setItem('just_navigated_to_category', 'true');
             setTimeout(() => {
                 restoreCategoryFromCookie();
             }, 50);
@@ -147,7 +128,7 @@ export default function CategoryPost() {
 
         const handleBeforeUnload = (event: BeforeUnloadEvent) => {
             event.preventDefault();
-            event.returnValue = '';
+            cookiesService.clearCookie('post_category')
         };
 
         window.addEventListener('beforeunload', handleBeforeUnload);
@@ -184,8 +165,8 @@ export default function CategoryPost() {
      */
     const onClickNext = () => {
         if (selectedCategory !== null) {
-            // Mark that we're navigating away (not reloading)
-            sessionStorage.setItem('navigated_from_category_page', 'true');
+            cookiesService.setCookie('post_category', JSON.stringify(selectedCategory));
+            setCategory(selectedCategory.slug)
             router.push('/post/attributes');
             return;
         }
@@ -240,8 +221,8 @@ export default function CategoryPost() {
                                             isSelected ? 'text-red-600' : 'text-gray-700'
                                         }`}
                                     >
-                    {category.category_name}
-                  </span>
+                                        {category.category_name}
+                                    </span>
                                 </button>
                             );
                         })}

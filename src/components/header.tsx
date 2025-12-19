@@ -11,6 +11,7 @@ import { User } from "@/types/user";
 import DropdownMapLocation from "@/components/map/dropdown_map_location";
 import { useRouter, useSearchParams } from 'next/navigation';
 import Toast from "@/components/toast";
+import cookiesService from "@/services/cookies_service";
 
 interface HeaderProps {
     children: React.ReactNode;
@@ -43,6 +44,7 @@ export default function Header({ children }: HeaderProps) {
             return;
         }
 
+        cookiesService.clearCookie("post_category")
         router.push("/post");
     };
 
