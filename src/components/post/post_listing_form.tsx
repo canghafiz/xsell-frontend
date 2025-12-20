@@ -9,6 +9,7 @@ import cookiesService from '@/services/cookies_service';
 import productSpecService from '@/services/product_spec_service';
 import PostLocation from "@/components/post/post_location";
 import {usePostStore} from "@/stores/post_store";
+import {getCurrencySymbol} from "@/helpers/currency";
 
 export default function PostListingForm() {
     const [images, setImages] = useState<File[]>([]);
@@ -293,7 +294,7 @@ export default function PostListingForm() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Price (Rp) <span className="text-red-600">*</span>
+                            Price ({getCurrencySymbol()}) <span className="text-red-600">*</span>
                         </label>
                         <input
                             type="number"

@@ -9,6 +9,46 @@ interface InteractiveMapProps {
     height?: string;
 }
 
+// Type definitions
+interface LngLat {
+    lat: number;
+    lng: number;
+    wrap: () => LngLat;
+}
+
+interface MapClickEvent {
+    lngLat: LngLat;
+}
+
+interface MapLibreMarker {
+    setLngLat: (coords: [number, number]) => MapLibreMarker;
+    addTo: (map: unknown) => MapLibreMarker;
+    getLngLat: () => LngLat;
+    remove: () => void;
+}
+
+interface MapLibreGL {
+    Map: new (opts: {
+        container: HTMLDivElement;
+        style: string;
+        zoom: number;
+        center: [number, number];
+    }) => unknown;
+    Marker: new (el: HTMLElement) => MapLibreMarker;
+    NavigationControl: new () => unknown;
+    FullscreenControl: new () => unknown;
+    ScaleControl: new (opts: { maxWidth: number; unit: string }) => unknown;
+    GeolocateControl: new (opts: {
+        positionOptions: { enableHighAccuracy: boolean };
+        trackUserLocation: boolean;
+    }) => unknown;
+}
+
+interface LocationIQ {
+    key: string;
+    getLayer: (layer: string) => string;
+}
+
 export default function InteractiveMap({
                                            initialLocation,
                                            onLocationSelect,
@@ -16,47 +56,59 @@ export default function InteractiveMap({
                                        }: InteractiveMapProps) {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapRef = useRef<unknown>(null);
-    const markerRef = useRef<unknown>(null);
+    const markerRef = useRef<MapLibreMarker | null>(null);
     const scriptsLoadedRef = useRef(false);
 
     const initMap = useCallback(() => {
         if (!mapContainer.current) return;
 
-        const win = window as unknown as {
-            maplibregl?: {
-                Map: new (opts: {
-                    container: HTMLDivElement;
-                    style: string;
-                    zoom: number;
-                    center: [number, number];
-                }) => unknown;
-                Marker: new (el: HTMLElement) => {
-                    setLngLat: (coords: [number, number]) => {
-                        addTo: (map: unknown) => unknown;
-                    };
-                    getLngLat: () => { lat: number; lng: number };
-                };
-            };
-            locationiq?: {
-                key: string;
-                getLayer: (layer: string) => string;
-            };
-        };
+        const win = window as unknown as { maplibregl?: MapLibreGL; locationiq?: LocationIQ };
 
         if (!win.maplibregl || !win.locationiq) return;
 
-        win.locationiq.key = process.env.NEXT_PUBLIC_MAP_KEY || 'pk.aa7f5d0539c5675b7f3429402939d8fa';
+        const maplibregl = win.maplibregl;
+        const locationiq = win.locationiq;
+
+        locationiq.key = process.env.NEXT_PUBLIC_MAP_KEY || 'pk.aa7f5d0539c5675b7f3429402939d8fa';
 
         const center: [number, number] = initialLocation
             ? [initialLocation.longitude, initialLocation.latitude]
             : [105.286585, -5.366689];
 
-        mapRef.current = new win.maplibregl.Map({
+        const mapInstance = new maplibregl.Map({
             container: mapContainer.current,
-            style: win.locationiq.getLayer("Streets"),
-            zoom: 12,
+            style: locationiq.getLayer("Streets"),
+            zoom: initialLocation ? 14 : 20,
             center: center
         });
+
+        mapRef.current = mapInstance;
+
+        // === ADD CONTROLS ===
+        // Navigation (zoom & rotate)
+        const nav = new maplibregl.NavigationControl();
+        (mapInstance as { addControl: (control: unknown, position?: string) => void }).addControl(nav, 'top-right');
+
+        // Fullscreen
+        (mapInstance as { addControl: (control: unknown) => void }).addControl(new maplibregl.FullscreenControl());
+
+        // Scale
+        (mapInstance as { addControl: (control: unknown) => void }).addControl(
+            new maplibregl.ScaleControl({
+                maxWidth: 80,
+                unit: 'metric'
+            })
+        );
+
+        // Geolocation (only works on HTTPS)
+        (mapInstance as { addControl: (control: unknown) => void }).addControl(
+            new maplibregl.GeolocateControl({
+                positionOptions: {
+                    enableHighAccuracy: true
+                },
+                trackUserLocation: true
+            })
+        );
 
         // Add initial marker if location provided
         if (initialLocation) {
@@ -67,26 +119,16 @@ export default function InteractiveMap({
             el.style.backgroundSize = 'contain';
             el.style.cursor = 'pointer';
 
-            markerRef.current = new win.maplibregl.Marker(el)
-                .setLngLat([initialLocation.longitude, initialLocation.latitude] as [number, number])
-                .addTo(mapRef.current);
+            markerRef.current = new maplibregl.Marker(el)
+                .setLngLat([initialLocation.longitude, initialLocation.latitude])
+                .addTo(mapInstance);
         }
 
         // Add click listener
-        const map = mapRef.current as {
-            on: (
-                event: string,
-                handler: (e: { lngLat: { wrap: () => { lat: number; lng: number } } }) => void
-            ) => void;
-        };
-
-        map.on('click', (e: { lngLat: { wrap: () => { lat: number; lng: number } } }) => {
+        (mapInstance as { on: (event: string, handler: (e: MapClickEvent) => void) => void }).on('click', (e: MapClickEvent) => {
             // Remove old marker
             if (markerRef.current) {
-                const marker = markerRef.current as { remove?: () => void };
-                if (typeof marker.remove === 'function') {
-                    marker.remove();
-                }
+                markerRef.current.remove();
             }
 
             // Create new marker
@@ -97,34 +139,30 @@ export default function InteractiveMap({
             el.style.backgroundSize = 'contain';
             el.style.cursor = 'pointer';
 
-            if (win.maplibregl) {
-                const wrappedLngLat = e.lngLat.wrap();
-                markerRef.current = new win.maplibregl.Marker(el)
-                    .setLngLat([wrappedLngLat.lng, wrappedLngLat.lat] as [number, number])
-                    .addTo(mapRef.current);
+            const wrappedLngLat = e.lngLat.wrap();
+            markerRef.current = new maplibregl.Marker(el)
+                .setLngLat([wrappedLngLat.lng, wrappedLngLat.lat])
+                .addTo(mapInstance);
 
-                const lngLat = (markerRef.current as { getLngLat: () => { lat: number; lng: number } }).getLngLat();
+            const lngLat = markerRef.current.getLngLat();
 
-                // Call callback with new location
-                if (onLocationSelect) {
-                    onLocationSelect({
-                        latitude: lngLat.lat,
-                        longitude: lngLat.lng,
-                        address: `Lat: ${lngLat.lat.toFixed(4)}, Lng: ${lngLat.lng.toFixed(4)}`
-                    });
-                }
+            if (onLocationSelect) {
+                onLocationSelect({
+                    latitude: lngLat.lat,
+                    longitude: lngLat.lng,
+                    address: `Lat: ${lngLat.lat.toFixed(4)}, Lng: ${lngLat.lng.toFixed(4)}`
+                });
             }
         });
     }, [initialLocation, onLocationSelect]);
 
     useEffect(() => {
-        // Load scripts only once
         if (scriptsLoadedRef.current) {
             initMap();
             return;
         }
 
-        // Load MapLibre GL JS
+        // Load MapLibre GL JS & CSS
         const maplibreScript = document.createElement("script");
         maplibreScript.src = "https://tiles.locationiq.com/v3/libs/maplibre-gl/1.15.2/maplibre-gl.js";
         maplibreScript.async = true;
@@ -133,7 +171,7 @@ export default function InteractiveMap({
         maplibreCSS.href = "https://tiles.locationiq.com/v3/libs/maplibre-gl/1.15.2/maplibre-gl.css";
         maplibreCSS.rel = "stylesheet";
 
-        // Load LocationIQ Styles
+        // Load LocationIQ styles
         const liqScript = document.createElement("script");
         liqScript.src = "https://tiles.locationiq.com/v3/js/liq-styles-ctrl-libre-gl.js?v=0.1.8";
         liqScript.async = true;
@@ -157,40 +195,28 @@ export default function InteractiveMap({
         return () => {
             if (mapRef.current) {
                 const map = mapRef.current as { remove?: () => void };
-                if (typeof map.remove === 'function') {
+                if (map.remove) {
                     map.remove();
                 }
             }
         };
     }, [initMap]);
 
-    // Update marker when initialLocation changes
+    // Update marker & center when initialLocation changes
     useEffect(() => {
         if (!mapRef.current || !initialLocation) return;
 
-        const win = window as unknown as {
-            maplibregl?: {
-                Marker: new (el: HTMLElement) => {
-                    setLngLat: (coords: [number, number]) => {
-                        addTo: (map: unknown) => unknown;
-                    };
-                };
-            };
-        };
+        const win = window as unknown as { maplibregl?: MapLibreGL };
 
         if (!win.maplibregl) return;
 
+        const maplibregl = win.maplibregl;
         const { latitude, longitude } = initialLocation;
 
-        // Remove old marker
         if (markerRef.current) {
-            const marker = markerRef.current as { remove?: () => void };
-            if (typeof marker.remove === 'function') {
-                marker.remove();
-            }
+            markerRef.current.remove();
         }
 
-        // Create new marker
         const el = document.createElement('div');
         el.style.backgroundImage = 'url(https://tiles.locationiq.com/static/images/marker50px.png)';
         el.style.width = '50px';
@@ -198,17 +224,14 @@ export default function InteractiveMap({
         el.style.backgroundSize = 'contain';
         el.style.cursor = 'pointer';
 
-        markerRef.current = new win.maplibregl.Marker(el)
-            .setLngLat([longitude, latitude] as [number, number])
+        markerRef.current = new maplibregl.Marker(el)
+            .setLngLat([longitude, latitude])
             .addTo(mapRef.current);
 
-        // Center map
-        const map = mapRef.current as {
-            flyTo?: (opts: { center: [number, number]; zoom: number }) => void;
-        };
-        if (typeof map.flyTo === 'function') {
+        const map = mapRef.current as { flyTo?: (opts: { center: [number, number]; zoom: number }) => void };
+        if (map.flyTo) {
             map.flyTo({
-                center: [longitude, latitude] as [number, number],
+                center: [longitude, latitude],
                 zoom: 14
             });
         }
