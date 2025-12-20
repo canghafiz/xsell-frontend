@@ -1,4 +1,4 @@
-import { Bell, MessageCircle, User as UserIcon, LogOut } from "lucide-react";
+import {Bell, MessageCircle, User as UserIcon, LogOut, HeartIcon} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { User } from "@/types/user";
@@ -88,6 +88,14 @@ export default function UserMenu({ user }: UserMenuProps) {
                         >
                             <UserIcon className="w-4 h-4" />
                             <span>Profile</span>
+                        </Link>
+                        <Link
+                            href="/my-ads"
+                            className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                            onClick={() => setIsDropdownOpen(false)}
+                        >
+                            <HeartIcon className="w-4 h-4" />
+                            <span>My Ads</span>
                         </Link>
                         <button
                             onClick={handleLogout}

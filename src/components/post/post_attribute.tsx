@@ -12,12 +12,6 @@ export default function PostAttribute() {
         message: string;
     } | null>(null);
 
-    /**
-     * Proceed to next step if a category is selected.
-     */
-    const onClickNext = () => {
-    };
-
     return (
         <LayoutTemplate>
             {toast && (
@@ -28,7 +22,7 @@ export default function PostAttribute() {
                 />
             )}
 
-            <TopPost onCLickNext={onClickNext} />
+            <TopPost />
             <PostListingForm/>
         </LayoutTemplate>
     );

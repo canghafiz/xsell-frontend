@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { AuthApiResponse, LoginPayload } from "@/types/user";
+import { AuthApiResponse, ChangePwPayload } from "@/types/user";
 
 export async function POST(req: Request) {
     const BE_API = process.env.BE_API;
@@ -16,32 +15,38 @@ export async function POST(req: Request) {
         );
     }
 
-    try {
-        const payload: LoginPayload = await req.json();
+    const authHeader = req.headers.get("Authorization");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
-        const res = await fetch(`${BE_API}member/user/login`, {
+    if (!token) {
+        return NextResponse.json(
+            {
+                success: false,
+                code: 400,
+                data: "Missing or invalid Authorization header",
+            } satisfies AuthApiResponse,
+            { status: 400 }
+        );
+    }
+
+    try {
+        const payload: ChangePwPayload = await req.json();
+
+        const res = await fetch(`${BE_API}member/product/`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
             body: JSON.stringify(payload),
         });
 
         const data: AuthApiResponse = await res.json();
-
-        if (res.ok && data.success && typeof data.data === "string" && data.data) {
-            (await cookies()).set({
-                name: "login_data",
-                value: data.data,
-                httpOnly: false,
-                secure: process.env.NODE_ENV === "production",
-                maxAge: 86400, // 1 day
-                path: "/",
-                sameSite: "lax",
-            });
-        }
-
-        return NextResponse.json(data, { status: data.code || res.status });
+        return NextResponse.json(data, { status: data.code });
     } catch (error) {
         const msg = error instanceof Error ? error.message : "Network error";
+        console.error("Change password error:", msg);
+
         return NextResponse.json(
             {
                 success: false,

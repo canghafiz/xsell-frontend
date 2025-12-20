@@ -2,7 +2,7 @@ import PrimaryBtn from "@/components/primary_btn";
 import {ArrowRightIcon} from "lucide-react";
 
 interface TopPostProps {
-    onCLickNext: () => void;
+    onCLickNext?: () => void;
 }
 
 export default function TopPost({onCLickNext}: TopPostProps) {
@@ -16,12 +16,14 @@ export default function TopPost({onCLickNext}: TopPostProps) {
             >
                 ← Back
             </button>
-            <div className="flex gap-2">
-                <PrimaryBtn icon={ArrowRightIcon}
-                            title="Next"
-                            onClick={onCLickNext}
-                            ariaLabel={`Next`}/>
-            </div>
+            {onCLickNext && (
+                <div className="flex gap-2">
+                    <PrimaryBtn icon={ArrowRightIcon}
+                                title="Next"
+                                onClick={onCLickNext}
+                                ariaLabel={`Next`}/>
+                </div>
+            )}
         </div>
     </>
 }

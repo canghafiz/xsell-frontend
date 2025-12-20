@@ -28,8 +28,6 @@ class ProductService {
 
             const url = `${baseUrl}/api/product/search?${queryString.toString()}`;
 
-            console.log("🔍 Calling search API (server):", url);
-
             const response = await fetch(url, {
                 method: "GET",
                 headers: { "Accept": "application/json" },

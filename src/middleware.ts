@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const protectedPaths = ['/post', '/post/attributes', '/profile']
+const protectedPaths = ['/post', '/post/attributes', '/profile', '/my-ads']
 const postFlowPaths = ['/post/attributes'] // Paths that need post_category cookie
 
 export function middleware(request: NextRequest) {
