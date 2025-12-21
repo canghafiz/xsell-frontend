@@ -34,10 +34,6 @@ Pastikan buat file .env dan lihat contoh lengkapnya di .env.example
 migrate -database "postgres://username:pw@tcp(localhost:port)/db_name" -path db/migrations up
 ```
 
-```bash
-Pastikan buat file .env dan lihat contoh lengkapnya di .env.example
-```
-
 ### 5. Jalankan Server
 
 ```bash
