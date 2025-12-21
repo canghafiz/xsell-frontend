@@ -29,7 +29,16 @@ bun install
 Pastikan buat file .env dan lihat contoh lengkapnya di .env.example
 ```
 
-### 4. Jalankan Server
+### 4. Wajib migration backend (golang) agar data awal ada
+```bash
+migrate -database "postgres://username:pw@tcp(localhost:port)/db_name" -path db/migrations up
+```
+
+```bash
+Pastikan buat file .env dan lihat contoh lengkapnya di .env.example
+```
+
+### 5. Jalankan Server
 
 ```bash
 npm run dev
