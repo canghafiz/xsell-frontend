@@ -6,6 +6,7 @@ import { MyProductItem } from "@/types/product";
 import { MoreVertical, Eye, Heart } from "lucide-react";
 import { formatDate } from "@/utils/date";
 import {useRouter} from "next/navigation";
+import {formatCurrency} from "@/utils/currency";
 
 interface CardAdsProps {
     item: MyProductItem;
@@ -119,7 +120,7 @@ export default function CardAds({
                     </div>
 
                     <p className="text-sm font-semibold text-red-800">
-                        Rp {item.price.toLocaleString("id-ID")}
+                        {formatCurrency(item.price)}
                     </p>
                 </div>
             </div>

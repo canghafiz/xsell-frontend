@@ -11,6 +11,7 @@ import WishlistBtn from "@/components/wishlist_btn";
 import ShareButton from "@/components/share_btn";
 import { formatCurrency } from "@/utils/currency";
 import ShowMap from "@/components/map/show_map";
+import Link from "next/link";
 
 interface ProductDetailProps {
     product: ProductDetailItem;
@@ -139,7 +140,6 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
                     <div className="p-4 border-b border-gray-100">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>
-                                {/* ✅ Tampilkan kategori utama */}
                                 <div className="flex flex-wrap gap-1.5 mb-2">
                                     <span
                                         key={primaryCategory.category_id}
@@ -232,19 +232,20 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
                                     ) : (
                                         <User className="h-3.5 w-3.5 mr-1.5" />
                                     )}
-                                    <span
-                                        className="cursor-pointer hover:underline"
-                                        onClick={() => {
-                                            alert(`View profile of user ID: ${product.listing.user_id}`);
-                                        }}
+                                    <Link
+                                    href={`/profile/${product.listing.user_id}`}
                                     >
+                                        <span
+                                            className="cursor-pointer hover:underline"
+                                        >
                                         {product.listing.first_name} {product.listing.last_name || ""}
                                     </span>
+                                    </Link>
                                 </div>
 
                                 {/* Location information */}
                                 <div className="flex items-center text-gray-600 text-sm">
-                                    <MapPin className="h-3.5 w-3.5 mr-1.5" />
+                                    <MapPin className="h-3.5 w-3.5 mr-1.5"/>
                                     <span>
                                         {product.location?.address || "Location not available"}
                                     </span>

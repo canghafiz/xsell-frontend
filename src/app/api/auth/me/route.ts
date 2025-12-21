@@ -35,6 +35,7 @@ export async function GET() {
             first_name: payload.data.first_name,
             last_name: payload.data.last_name,
             photo_profile: payload.data.photo_profile,
+            created_at: payload.data.created_at,
         };
 
         return NextResponse.json({ user });
