@@ -1,7 +1,9 @@
-'use client'
-import React, { useState } from "react";
+'use client';
+
+import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { useRouter, usePathname } from "next/navigation";
+import { usePostStore } from "@/stores/post_store";
 
 const buttonVariants = cva(
     "cursor-pointer font-medium text-sm flex items-center gap-2 whitespace-nowrap transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
@@ -39,22 +41,17 @@ export default function TopOwnFavAds({
     const isAds = pathname === '/my-ads';
     const isFavorites = pathname === '/my-favorite';
 
-    const [sortBy, setSortBy] = useState<SortValue>('new_to_oldest');
+    // 🔹 Ambil dari Zustand
+    const sortMyAd = usePostStore((state) => state.sortMyAd);
+    const setSortMyAd = usePostStore((state) => state.setSortMyAd);
 
     return (
-        <div
-            className="
-                flex flex-col gap-3
-                sm:flex-row sm:items-center sm:justify-between
-                mb-3
-            "
-        >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
             {/* Left buttons */}
             <div className="flex gap-2 w-full sm:w-auto">
                 <button
                     type="button"
                     onClick={() => router.push('/my-ads')}
-                    aria-label="ads-btn"
                     className={buttonVariants({
                         variant: isAds ? variant : 'outline',
                         size,
@@ -66,7 +63,6 @@ export default function TopOwnFavAds({
                 <button
                     type="button"
                     onClick={() => router.push('/my-favorite')}
-                    aria-label="favorite-btn"
                     className={buttonVariants({
                         variant: isFavorites ? variant : 'outline',
                         size,
@@ -76,20 +72,15 @@ export default function TopOwnFavAds({
                 </button>
             </div>
 
-            {/* Sort By */}
-            <div
-                className="
-                    flex items-center gap-2
-                    w-full sm:w-auto
-                "
-            >
+            {/* Sort */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
                 <span className="text-sm text-gray-500 hidden sm:block">
                     Sort by
                 </span>
 
                 <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as SortValue)}
+                    value={sortMyAd}
+                    onChange={(e) => setSortMyAd(e.target.value as SortValue)}
                     className="
                         w-full sm:w-auto
                         border border-gray-300 rounded-lg

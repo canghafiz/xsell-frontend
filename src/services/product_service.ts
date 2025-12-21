@@ -1,5 +1,5 @@
 import {
-    ByCategoryProductApiResponse,
+    ByCategoryProductApiResponse, MyProductApiResponse,
     ProductDetailApiResponse,
     ProductSearchApiResponse
 } from "@/types/product";
@@ -86,6 +86,62 @@ class ProductService {
                 code: 500,
                 error: "Network error",
             };
+        }
+    }
+    async getMyProducts(
+        userId: number,
+        sortBy: 'new_to_oldest' | 'oldest_to_new' | 'most_liked' = 'new_to_oldest',
+        accessToken: string
+    ): Promise<MyProductApiResponse> {
+
+        if (!userId) {
+            return {
+                success: false,
+                code: 400,
+                error: "userId is required",
+            } as MyProductApiResponse;
+        }
+
+        const baseUrl =
+            process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+        const url = new URL(`${baseUrl}/api/product/my-ads`);
+        url.searchParams.set("userId", String(userId));
+        url.searchParams.set("sortBy", sortBy);
+
+        try {
+            const res = await fetch(url.toString(), {
+                method: "GET",
+                headers: {
+                    Accept: "application/json",
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                cache: "no-store",
+            });
+
+            if (!res.ok) {
+                try {
+                    const errorData = await res.json();
+                    return errorData as MyProductApiResponse;
+                } catch {
+                    return {
+                        success: false,
+                        code: res.status,
+                        error: "Failed to fetch my products",
+                    } as MyProductApiResponse;
+                }
+            }
+
+            const data = await res.json();
+            return data as MyProductApiResponse;
+
+        } catch (error) {
+            console.error("My Products fetch error:", error);
+            return {
+                success: false,
+                code: 500,
+                error: "Network error",
+            } as MyProductApiResponse;
         }
     }
     async getByCategory(params: {

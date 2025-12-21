@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { MapItem } from '@/types/map';
 
+export type MyAdsSortType =
+    | "new_to_oldest"
+    | "oldest_to_new"
+    | "most_liked";
+
 interface PostStore {
     // Post data
     title: string;
@@ -10,6 +15,7 @@ interface PostStore {
     category: string;
     tags: string[];
     price: number | null;
+    sortMyAd: MyAdsSortType;
 
     // Actions
     setTitle: (title: string) => void;
@@ -25,11 +31,23 @@ interface PostStore {
     removeTag: (tag: string) => void;
     setPrice: (price: number | null) => void;
 
-    // Reset all
+    // ✅ FIXED
+    setSortMyAd: (sortMyAd: MyAdsSortType) => void;
+
     resetPost: () => void;
 }
 
-const initialState = {
+const initialState: Pick<
+    PostStore,
+    | "title"
+    | "description"
+    | "images"
+    | "location"
+    | "category"
+    | "tags"
+    | "price"
+    | "sortMyAd"
+> = {
     title: '',
     description: '',
     images: [],
@@ -37,46 +55,46 @@ const initialState = {
     category: '',
     tags: [],
     price: null,
+    sortMyAd: "new_to_oldest",
 };
 
 export const usePostStore = create<PostStore>((set) => ({
-    // Initial state
     ...initialState,
 
-    // Actions
     setTitle: (title) => set({ title }),
-
     setDescription: (description) => set({ description }),
-
     setImages: (images) => set({ images }),
 
-    addImage: (image) => set((state) => ({
-        images: [...state.images, image]
-    })),
+    addImage: (image) =>
+        set((state) => ({
+            images: [...state.images, image],
+        })),
 
-    removeImage: (index) => set((state) => ({
-        images: state.images.filter((_, i) => i !== index)
-    })),
+    removeImage: (index) =>
+        set((state) => ({
+            images: state.images.filter((_, i) => i !== index),
+        })),
 
     setLocation: (location) => set({ location }),
-
     clearLocation: () => set({ location: null }),
-
     setCategory: (category) => set({ category }),
-
     setTags: (tags) => set({ tags }),
 
-    addTag: (tag) => set((state) => {
-        if (state.tags.includes(tag)) return state;
-        return { tags: [...state.tags, tag] };
-    }),
+    addTag: (tag) =>
+        set((state) =>
+            state.tags.includes(tag)
+                ? state
+                : { tags: [...state.tags, tag] }
+        ),
 
-    removeTag: (tag) => set((state) => ({
-        tags: state.tags.filter((t) => t !== tag)
-    })),
+    removeTag: (tag) =>
+        set((state) => ({
+            tags: state.tags.filter((t) => t !== tag),
+        })),
 
     setPrice: (price) => set({ price }),
 
-    // Reset all to initial state
+    setSortMyAd: (sortMyAd) => set({ sortMyAd }),
+
     resetPost: () => set(initialState),
 }));

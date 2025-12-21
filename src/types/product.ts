@@ -108,3 +108,21 @@ export interface ProductSearchApiResponse {
     code: number;
     data: ProductItem[];
 }
+
+export interface MyProductItem {
+    product_id: number;
+    slug: string;
+    title: string;
+    view_count: number;
+    main_image: string;
+    total_like: number;
+    price: number;
+    status: string;
+    created_at: string;
+}
+
+export interface MyProductApiResponse {
+    success: boolean;
+    code: number;
+    data?: MyProductItem[];
+}

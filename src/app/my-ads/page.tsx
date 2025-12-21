@@ -3,6 +3,7 @@ import Footer from "@/components/footer";
 import type {Metadata} from "next";
 import TopOwnFavAds from "@/components/profile/top_own_fav_ads";
 import LayoutTemplate from "@/components/layout";
+import MyAds from "@/components/profile/my_ads";
 
 export async function generateMetadata(): Promise<Metadata> {
     const appName = process.env.NEXT_PUBLIC_APP_NAME || "XSELL";
@@ -39,6 +40,7 @@ export default function MyAdsPage() {
         <LayoutTemplate>
             <main className="min-h-screen mt-58 md:mt-36">
                 <TopOwnFavAds/>
+                <MyAds/>
             </main>
         </LayoutTemplate>
         <Footer/>
