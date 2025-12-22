@@ -308,15 +308,22 @@ export default function ProductCategoryContent({
                     <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
                         <h3 className="font-semibold text-lg mb-4">Categories</h3>
                         <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                            <div className="flex items-center pb-3 border-b border-gray-200">
+                            <div className="flex items-center pb-3 border-b border-red-200">
                                 <input
                                     id="parent-category"
                                     type="checkbox"
                                     checked={selectedSubCategories.length === 0}
                                     onChange={() => setSelectedSubCategories([])}
-                                    className="mr-3 h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500 focus:border-red-500"
+                                    className="
+        mr-3 h-4 w-4
+        accent-red-600
+        cursor-pointer
+    "
                                 />
-                                <label htmlFor="parent-category" className="text-sm font-medium cursor-pointer">
+                                <label
+                                    htmlFor="parent-category"
+                                    className="text-sm font-medium cursor-pointer hover:text-red-600 transition-colors"
+                                >
                                     All {categorySlug.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                 </label>
                             </div>
@@ -332,9 +339,16 @@ export default function ProductCategoryContent({
                                                 : [...selectedSubCategories, cat.sub_category_slug];
                                             setSelectedSubCategories(newSelected);
                                         }}
-                                        className="mr-3 h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                                        className="
+            mr-3 h-4 w-4
+            accent-red-600
+            cursor-pointer
+        "
                                     />
-                                    <label htmlFor={`cat-${cat.sub_category_slug}`} className="text-sm cursor-pointer hover:text-red-600 transition-colors">
+                                    <label
+                                        htmlFor={`cat-${cat.sub_category_slug}`}
+                                        className="text-sm cursor-pointer hover:text-red-600 transition-colors"
+                                    >
                                         {cat.sub_category_name}
                                     </label>
                                 </div>

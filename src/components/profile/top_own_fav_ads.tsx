@@ -39,7 +39,7 @@ export default function TopOwnFavAds({
     const pathname = usePathname();
 
     const isAds = pathname === '/my-ads';
-    const isFavorites = pathname === '/my-favorite';
+    const isFavorites = pathname === '/my-favorites';
 
     // 🔹 Ambil dari Zustand
     const sortMyAd = usePostStore((state) => state.sortMyAd);
@@ -62,7 +62,7 @@ export default function TopOwnFavAds({
 
                 <button
                     type="button"
-                    onClick={() => router.push('/my-favorite')}
+                    onClick={() => router.push('/my-favorites')}
                     className={buttonVariants({
                         variant: isFavorites ? variant : 'outline',
                         size,

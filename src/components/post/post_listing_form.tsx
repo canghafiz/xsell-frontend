@@ -24,6 +24,41 @@ type ImageSource = {
     preview: string; // Preview URL untuk ditampilkan
 };
 
+const getCurrencyLocale = (currency: string): string => {
+    const localeMap: { [key: string]: string } = {
+        'IDR': 'id-ID',
+        'USD': 'en-US',
+        'EUR': 'de-DE',
+        'GBP': 'en-GB',
+        'SGD': 'en-SG',
+        'MYR': 'ms-MY',
+        'THB': 'th-TH',
+        'PHP': 'en-PH',
+        'VND': 'vi-VN',
+        'JPY': 'ja-JP',
+        'CNY': 'zh-CN',
+        'KRW': 'ko-KR',
+        'INR': 'en-IN',
+        'AUD': 'en-AU',
+    };
+
+    return localeMap[currency] || 'en-US'; // default to en-US
+};
+
+const formatPrice = (value: string): string => {
+    const numericValue = value.replace(/\D/g, '');
+    if (numericValue === '') return '';
+
+    const currency = process.env.NEXT_PUBLIC_CURRENCY || 'IDR';
+    const locale = getCurrencyLocale(currency);
+
+    return new Intl.NumberFormat(locale).format(parseInt(numericValue));
+};
+
+const parsePrice = (formattedValue: string): string => {
+    return formattedValue.replace(/\D/g, '');
+};
+
 export default function PostListingForm() {
     // Ganti structure images
     const [images, setImages] = useState<(ImageSource | null)[]>(Array(10).fill(null));
@@ -61,7 +96,7 @@ export default function PostListingForm() {
         address: '',
     });
 
-    const conditions = ['New', 'Like New', 'Good', 'Fair', 'Needs Repair'];
+    const conditions = ['New', 'Like New', 'Good', 'Good Quite', 'Needs Repair'];
     const statuses = ['Available', 'Sold Out'];
 
     const imageSliderRef = useRef<HTMLDivElement>(null);
@@ -185,6 +220,22 @@ export default function PostListingForm() {
         };
         fetchUser();
     }, []);
+
+    const [displayPrice, setDisplayPrice] = useState('');
+
+    const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        const numericValue = parsePrice(value);
+
+        setFormData((prev) => ({ ...prev, price: numericValue }));
+        setDisplayPrice(formatPrice(value));
+    };
+
+    useEffect(() => {
+        if (formData.price) {
+            setDisplayPrice(formatPrice(formData.price));
+        }
+    }, [formData.price]);
 
     // 🔥 MAIN SUBMIT HANDLER
     const handleSubmit = async () => {
@@ -600,13 +651,13 @@ export default function PostListingForm() {
                             Price ({getCurrencySymbol()}) <span className="text-red-600">*</span>
                         </label>
                         <input
-                            type="number"
+                            type="text"
                             name="price"
-                            value={formData.price}
-                            onChange={handleInputChange}
+                            value={displayPrice}
+                            onChange={handlePriceChange}
                             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                             placeholder="Enter price"
-                            min="0"
+                            inputMode="numeric"
                         />
                     </div>
 

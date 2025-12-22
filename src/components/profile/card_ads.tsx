@@ -5,23 +5,28 @@ import Image from "next/image";
 import { MyProductItem } from "@/types/product";
 import { MoreVertical, Eye, Heart } from "lucide-react";
 import { formatDate } from "@/utils/date";
-import {useRouter} from "next/navigation";
-import {formatCurrency} from "@/utils/currency";
+import { useRouter } from "next/navigation";
+import { formatCurrency } from "@/utils/currency";
+import productService from "@/services/product_service";
+import cookiesService from "@/services/cookies_service";
 
 interface CardAdsProps {
     item: MyProductItem;
     onUpdate?: (item: MyProductItem) => void;
     onDelete?: (item: MyProductItem) => void;
+    onStatusUpdated?: () => void; // optional: refetch parent
 }
 
 export default function CardAds({
                                     item,
                                     onUpdate,
                                     onDelete,
+                                    onStatusUpdated,
                                 }: CardAdsProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [loadingStatus, setLoadingStatus] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
-    const router = useRouter()
+    const router = useRouter();
 
     // Close dropdown on outside click
     useEffect(() => {
@@ -35,6 +40,44 @@ export default function CardAds({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    /** ======================
+     *  Update Status Handler
+     *  ====================== */
+    const handleUpdateStatus = async () => {
+        if (loadingStatus) return;
+
+        try {
+            setLoadingStatus(true);
+
+            const accessToken = cookiesService.getCookie("login_data");
+            if (!accessToken) {
+                throw new Error("Access token not found");
+            }
+
+            const nextStatus =
+                item.status === "Sold out" ? "Available" : "Sold out";
+
+            const res = await productService.updateStatus(
+                item.product_id,
+                nextStatus,
+                accessToken
+            );
+
+            if (!res.success) {
+                console.warn("Failed to update product status", res);
+                return;
+            }
+
+            // Notify parent to refetch data
+            onStatusUpdated?.();
+
+        } catch (error) {
+            console.error("Update product status error:", error);
+        } finally {
+            setLoadingStatus(false);
+        }
+    };
+
     return (
         <div className="relative bg-white border-2 border-red-800 rounded-2xl">
             {/* Header */}
@@ -47,7 +90,7 @@ export default function CardAds({
                 <div className="relative" ref={menuRef}>
                     <button
                         onClick={() => setIsMenuOpen(v => !v)}
-                        className="p-1 rounded-full hover:bg-red-100"
+                        className="cursor-pointer p-1 rounded-full hover:bg-red-100"
                         aria-label="Open menu"
                     >
                         <MoreVertical size={18} className="text-red-800" />
@@ -60,7 +103,7 @@ export default function CardAds({
                                     setIsMenuOpen(false);
                                     router.push(`/product/${item.slug}`);
                                 }}
-                                className="w-full text-left px-4 py-2 text-sm rounded-t-lg hover:bg-red-100"
+                                className="cursor-pointer w-full text-left px-4 py-2 text-sm rounded-t-lg hover:bg-red-100"
                             >
                                 View
                             </button>
@@ -70,7 +113,7 @@ export default function CardAds({
                                     setIsMenuOpen(false);
                                     onUpdate?.(item);
                                 }}
-                                className="w-full text-left px-4 py-2 text-sm hover:bg-red-100"
+                                className="cursor-pointer w-full text-left px-4 py-2 text-sm hover:bg-red-100"
                             >
                                 Update
                             </button>
@@ -80,7 +123,7 @@ export default function CardAds({
                                     setIsMenuOpen(false);
                                     onDelete?.(item);
                                 }}
-                                className="w-full text-left px-4 py-2 text-sm rounded-b-lg text-red-600 hover:bg-red-50"
+                                className="cursor-pointer w-full text-left px-4 py-2 text-sm rounded-b-lg text-red-600 hover:bg-red-50"
                             >
                                 Delete
                             </button>
@@ -98,7 +141,6 @@ export default function CardAds({
                         fill
                         sizes="80px"
                         className="rounded-lg object-cover"
-                        priority={false}
                         unoptimized
                     />
                 </div>
@@ -127,16 +169,21 @@ export default function CardAds({
 
             {/* Footer */}
             <button
-                disabled={item.status === "Sold out"}
+                onClick={handleUpdateStatus}
+                disabled={loadingStatus}
                 className="
-                    m-4 px-8 border-2 border-red-800 rounded-xl py-2 text-sm font-medium
-                    hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed
+                    cursor-pointer m-4 px-8 py-2 text-sm font-medium
+                    border-2 border-red-800 rounded-xl
                     text-red-800
+                    hover:bg-red-100
+                    disabled:opacity-50 disabled:cursor-not-allowed
                 "
             >
-                {item.status === "Sold out"
-                    ? "Mark as Available"
-                    : "Mark as Sold"}
+                {loadingStatus
+                    ? "Updating..."
+                    : item.status === "Sold out"
+                        ? "Mark as Available"
+                        : "Mark as Sold"}
             </button>
         </div>
     );

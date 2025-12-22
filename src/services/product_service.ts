@@ -1,7 +1,7 @@
 import {
-    ByCategoryProductApiResponse, MyProductApiResponse,
+    ByCategoryProductApiResponse, DeleteProductApiResponse, MyProductApiResponse,
     ProductDetailApiResponse,
-    ProductSearchApiResponse
+    ProductSearchApiResponse, UpdateProductStatusApiResponse
 } from "@/types/product";
 
 class ProductService {
@@ -88,6 +88,125 @@ class ProductService {
             };
         }
     }
+    async updateStatus(
+        id: number,
+        status: string,
+        accessToken: string
+    ): Promise<UpdateProductStatusApiResponse> {
+
+        if (!id) {
+            return {
+                success: false,
+                code: 400,
+            } as UpdateProductStatusApiResponse;
+        }
+
+        if (!status) {
+            return {
+                success: false,
+                code: 400,
+            } as UpdateProductStatusApiResponse;
+        }
+
+        const baseUrl =
+            process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+        const url = new URL(`${baseUrl}/api/product/status`);
+        url.searchParams.set("id", String(id));
+
+        try {
+            const res = await fetch(url.toString(), {
+                method: "PATCH",
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify({
+                    status,
+                }),
+                cache: "no-store",
+            });
+
+            if (!res.ok) {
+                try {
+                    const errorData = await res.json();
+                    return errorData as UpdateProductStatusApiResponse;
+                } catch {
+                    return {
+                        success: false,
+                        code: res.status,
+                    } as UpdateProductStatusApiResponse;
+                }
+            }
+
+            const data = await res.json();
+            return data as UpdateProductStatusApiResponse;
+
+        } catch (error) {
+            console.error("Update Product Status error:", error);
+            return {
+                success: false,
+                code: 500,
+            } as UpdateProductStatusApiResponse;
+        }
+    }
+
+    async deleteProduct(
+        id: number,
+        accessToken: string
+    ): Promise<DeleteProductApiResponse> {
+
+        if (!id) {
+            return {
+                success: false,
+                code: 400,
+                error: "productId is required",
+            } as DeleteProductApiResponse;
+        }
+
+        const baseUrl =
+            process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+        const url = new URL(`${baseUrl}/api/product`);
+        url.searchParams.set("id", String(id));
+
+        try {
+            const res = await fetch(url.toString(), {
+                method: "DELETE",
+                headers: {
+                    Accept: "application/json",
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                cache: "no-store",
+            });
+
+            if (!res.ok) {
+                try {
+                    const errorData = await res.json();
+                    return errorData as DeleteProductApiResponse;
+                } catch {
+                    return {
+                        success: false,
+                        code: res.status,
+                        error: "Failed to delete product",
+                    } as DeleteProductApiResponse;
+                }
+            }
+
+            const data = await res.json();
+            return data as DeleteProductApiResponse;
+
+        } catch (error) {
+            console.error("Delete Product error:", error);
+            return {
+                success: false,
+                code: 500,
+                error: "Network error",
+            } as DeleteProductApiResponse;
+        }
+    }
+
     async getMyProducts(
         userId: number,
         sortBy: 'new_to_oldest' | 'oldest_to_new' | 'most_liked' = 'new_to_oldest',

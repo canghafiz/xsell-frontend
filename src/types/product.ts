@@ -126,3 +126,13 @@ export interface MyProductApiResponse {
     code: number;
     data?: MyProductItem[];
 }
+
+export interface DeleteProductApiResponse {
+    success: boolean;
+    code: number;
+}
+
+export interface UpdateProductStatusApiResponse {
+    success: boolean;
+    code: number;
+}
