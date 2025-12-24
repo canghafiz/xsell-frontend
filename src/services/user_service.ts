@@ -1,5 +1,5 @@
 import {
-    AuthApiResponse, ChangePwPayload, CheckOtpPWPayload,
+    AuthApiResponse, ChangePwPayload, CheckOtpPWPayload, GetUserApiResponse,
     LoginPayload,
     PwResetPayload,
     RegisterPayload,
@@ -359,6 +359,45 @@ class UserService {
             };
         } catch (error) {
             console.error("Update user data error:", error);
+
+            return {
+                success: false,
+                code: 500,
+            };
+        }
+    }
+    async getByUserId(userId: number): Promise<GetUserApiResponse> {
+        try {
+            const baseUrl =
+                process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+            const url = new URL(`${baseUrl}/api/user`);
+            url.searchParams.set("user_id", userId.toString());
+
+            const res = await fetch(url, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                cache: "no-store",
+            });
+
+            const responseData: GetUserApiResponse = await res.json();
+
+            if (!res.ok) {
+                return {
+                    success: false,
+                    code: responseData.code ?? res.status,
+                };
+            }
+
+            return {
+                success: true,
+                code: responseData.code ?? 200,
+                data: responseData.data,
+            };
+        } catch (error) {
+            console.error("Get user by id error:", error);
 
             return {
                 success: false,

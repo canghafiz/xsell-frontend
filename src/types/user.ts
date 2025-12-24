@@ -59,3 +59,9 @@ export interface UpdateUserDataApiResponse {
     success: boolean;
     code: number;
 }
+
+export interface GetUserApiResponse {
+    success: boolean;
+    code: number;
+    data?: User;
+}

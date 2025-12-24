@@ -210,7 +210,6 @@ class ProductService {
     async getMyProducts(
         userId: number,
         sortBy: 'new_to_oldest' | 'oldest_to_new' | 'most_liked' = 'new_to_oldest',
-        accessToken: string
     ): Promise<MyProductApiResponse> {
 
         if (!userId) {
@@ -233,7 +232,6 @@ class ProductService {
                 method: "GET",
                 headers: {
                     Accept: "application/json",
-                    Authorization: `Bearer ${accessToken}`,
                 },
                 cache: "no-store",
             });

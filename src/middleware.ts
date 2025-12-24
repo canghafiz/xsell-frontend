@@ -1,28 +1,49 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const protectedPaths = ['/post', '/post/attributes', '/profile', '/profile/edit', '/my-ads', '/my-favorites']
-const postFlowPaths = ['/post/attributes'] // Paths that need post_category cookie
+// Only exact protected paths
+const protectedPaths = [
+    '/post',
+    '/post/attributes',
+    '/profile',
+    '/profile/edit',
+    '/my-ads',
+    '/my-favorites',
+]
+
+const postFlowPaths = ['/post/attributes']
 
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl
 
-    const isProtected = protectedPaths.some(path => pathname.startsWith(path))
+    /**
+     * 🔒 Protected rule:
+     * - Exact match
+     * - OR nested path AFTER protected root (except /profile/[slug])
+     */
+    const isProtected = protectedPaths.some(path => {
+        if (path === '/profile') {
+            // Protect ONLY /profile (exact), not /profile/[slug]
+            return pathname === '/profile'
+        }
+
+        return pathname === path || pathname.startsWith(`${path}/`)
+    })
 
     if (isProtected) {
-        // Check authentication first
         const loginCookie = request.cookies.get('login_data')
 
         if (!loginCookie) {
             return NextResponse.redirect(new URL('/', request.url))
         }
 
-        // Check if user is on post flow paths
-        const isPostFlowPath = postFlowPaths.some(path => pathname.startsWith(path))
+        // 🧭 Post flow validation
+        const isPostFlowPath = postFlowPaths.some(path =>
+            pathname === path || pathname.startsWith(`${path}/`)
+        )
 
         if (isPostFlowPath) {
             const postCategoryCookie = request.cookies.get('post_category')
-
             if (!postCategoryCookie) {
                 return NextResponse.redirect(new URL('/post', request.url))
             }

@@ -44,20 +44,13 @@ export interface GeneralProfileProps {
 export default function GeneralProfile({ user, isOwnProfile = false }: GeneralProfileProps) {
     const [products, setProducts] = useState<MyProductItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const router = useRouter();
-
+    useRouter();
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const loginData = cookiesService.getCookie('login_data');
-                if (!loginData) {
-                    throw new Error("Access token not found");
-                }
-
                 const res = await productService.getMyProducts(
                     user.user_id,
                     'new_to_oldest',
-                    loginData
                 );
 
                 if (res.success && res.data) {

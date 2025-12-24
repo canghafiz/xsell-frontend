@@ -21,15 +21,6 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    // Get Authorization from Request
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader) {
-        return NextResponse.json(
-            { success: false, code: 401, error: "Unauthorized" },
-            { status: 401 }
-        );
-    }
-
     /** ===============================
      *  Build backend URL
      *  =============================== */
@@ -43,7 +34,6 @@ export async function GET(request: NextRequest) {
             method: "GET",
             headers: {
                 Accept: "application/json",
-                Authorization: authHeader, // 🔐 forward token
             },
             cache: "no-store",
         });
