@@ -76,3 +76,65 @@ export async function DELETE(request: NextRequest) {
         );
     }
 }
+
+export async function PATCH(request: NextRequest) {
+    const productId = request.nextUrl.searchParams.get("product_id");
+
+    if (!productId) {
+        return NextResponse.json(
+            { success: false, code: 400, error: "product_id is required" },
+            { status: 400 }
+        );
+    }
+
+    const BE_API = process.env.BE_API;
+    if (!BE_API) {
+        return NextResponse.json(
+            { success: false, code: 500, error: "Backend API not configured" },
+            { status: 500 }
+        );
+    }
+
+    const backendUrl = `${BE_API}member/product/viewCount/${productId}`;
+
+    try {
+        const backendRes = await fetch(backendUrl, {
+            method: "PATCH",
+            headers: {
+                Accept: "application/json",
+            },
+        });
+
+        const rawText = await backendRes.text();
+
+        if (!backendRes.ok) {
+            let errorResponse;
+            try {
+                errorResponse = JSON.parse(rawText);
+            } catch {
+                errorResponse = {
+                    success: false,
+                    code: backendRes.status,
+                    error: "Failed to update view count",
+                };
+            }
+
+            return NextResponse.json(errorResponse, {
+                status: backendRes.status,
+            });
+        }
+
+        return new NextResponse(rawText, {
+            status: backendRes.status,
+            headers: {
+                "Content-Type": "application/json; charset=utf-8",
+            },
+        });
+    } catch (error) {
+        console.error("Update View Count API error:", error);
+        return NextResponse.json(
+            { success: false, code: 500, error: "Internal server error" },
+            { status: 500 }
+        );
+    }
+}

@@ -1,7 +1,7 @@
 import {
     ByCategoryProductApiResponse, DeleteProductApiResponse, MyProductApiResponse,
     ProductDetailApiResponse,
-    ProductSearchApiResponse, UpdateProductStatusApiResponse
+    ProductSearchApiResponse, UpdateProductStatusApiResponse, UpdateProductViewCountApiResponse
 } from "@/types/product";
 
 class ProductService {
@@ -149,6 +149,56 @@ class ProductService {
                 success: false,
                 code: 500,
             } as UpdateProductStatusApiResponse;
+        }
+    }
+
+    async updateViewCount(
+        productId: number,
+    ): Promise<UpdateProductViewCountApiResponse> {
+
+        if (!productId) {
+            return {
+                success: false,
+                code: 400,
+            };
+        }
+
+        const baseUrl =
+            process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+        const url = new URL(`${baseUrl}/api/product`);
+        url.searchParams.set("product_id", String(productId));
+
+        try {
+            const res = await fetch(url.toString(), {
+                method: "PATCH",
+                headers: {
+                    Accept: "application/json",
+                },
+                cache: "no-store",
+            });
+
+            if (!res.ok) {
+                try {
+                    const errorData = await res.json();
+                    return errorData as UpdateProductViewCountApiResponse;
+                } catch {
+                    return {
+                        success: false,
+                        code: res.status,
+                    };
+                }
+            }
+
+            const data = await res.json();
+            return data as UpdateProductViewCountApiResponse;
+
+        } catch (error) {
+            console.error("Update Product View Count error:", error);
+            return {
+                success: false,
+                code: 500,
+            };
         }
     }
 

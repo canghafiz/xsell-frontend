@@ -136,3 +136,8 @@ export interface UpdateProductStatusApiResponse {
     success: boolean;
     code: number;
 }
+
+export interface UpdateProductViewCountApiResponse {
+    success: boolean;
+    code: number;
+}

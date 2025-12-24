@@ -12,6 +12,7 @@ import ShareButton from "@/components/share_btn";
 import { formatCurrency } from "@/utils/currency";
 import ShowMap from "@/components/map/show_map";
 import Link from "next/link";
+import productService from "@/services/product_service";
 
 interface ProductDetailProps {
     product: ProductDetailItem;
@@ -82,6 +83,15 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
             prev < product.images.length - 1 ? prev + 1 : 0
         );
     };
+
+    useEffect(() => {
+        // fire & forget (tidak perlu await)
+        productService.updateViewCount(product.product_id)
+            .catch((err) => {
+                console.warn("Failed to update view count:", err);
+            });
+    }, [product.product_id]);
+
 
     // Currency formatting
     const formattedPrice = formatCurrency(product.price);
@@ -232,15 +242,18 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
                                     ) : (
                                         <User className="h-3.5 w-3.5 mr-1.5" />
                                     )}
+                                    <span>
+                                        {`Listed By `}
                                     <Link
-                                    href={`/profile/${product.listing.user_id}`}
+                                        href={`/profile/${product.listing.user_id}`}
                                     >
                                         <span
-                                            className="cursor-pointer hover:underline"
+                                            className="cursor-pointer underline"
                                         >
-                                        {product.listing.first_name} {product.listing.last_name || ""}
+                                        {`${product.listing.first_name} ${product.listing.last_name || ""}`}
                                     </span>
                                     </Link>
+                                    </span>
                                 </div>
 
                                 {/* Location information */}

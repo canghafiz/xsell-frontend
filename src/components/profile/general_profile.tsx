@@ -6,7 +6,6 @@ import { User } from "@/types/user";
 import { Share2, Edit, Eye, Heart, Calendar } from "lucide-react";
 import Image from "next/image";
 import { productService } from "@/services/product_service";
-import { cookiesService } from "@/services/cookies_service";
 import { MyProductItem } from "@/types/product";
 import Link from "next/link";
 import {formatCurrency} from "@/utils/currency";
@@ -44,6 +43,13 @@ export interface GeneralProfileProps {
 export default function GeneralProfile({ user, isOwnProfile = false }: GeneralProfileProps) {
     const [products, setProducts] = useState<MyProductItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const appName = process.env.NEXT_PUBLIC_APP_NAME || "XSELL";
+
+    useEffect(() => {
+        if (user?.first_name) {
+            document.title = `${appName} - ${user.first_name} ${user.last_name}`;
+        }
+    }, [user.first_name]);
     useRouter();
     useEffect(() => {
         const fetchProducts = async () => {
