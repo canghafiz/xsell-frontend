@@ -15,9 +15,7 @@ export default function UserMenu({ user }: UserMenuProps) {
 
     const getProfileImageUrl = () => {
         if (!user.photo_profile) return null;
-        return user.photo_profile.startsWith("http")
-            ? user.photo_profile
-            : `${process.env.NEXT_PUBLIC_STORAGE_URL}${user.photo_profile}`;
+        return `${process.env.NEXT_PUBLIC_STORAGE_URL}${user.photo_profile}`;
     };
 
     const imageUrl = getProfileImageUrl();
@@ -65,15 +63,17 @@ export default function UserMenu({ user }: UserMenuProps) {
                     aria-label="User menu"
                 >
                     {imageUrl ? (
-                        <Image
-                            src={imageUrl}
-                            alt="Profile"
-                            width={32}
-                            height={32}
-                            className="rounded-full object-cover border border-gray-300 hover:border-gray-400 transition-colors"
-                        />
+                        <div className="relative w-8 h-8 rounded-full overflow-hidden border border-gray-300 hover:border-gray-400 transition-colors">
+                            <Image
+                                src={imageUrl}
+                                alt="Profile"
+                                fill
+                                unoptimized
+                                className="object-cover"
+                            />
+                        </div>
                     ) : (
-                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors border border-gray-300">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border border-gray-300">
                             <UserIcon className="w-4 h-4 text-gray-600" />
                         </div>
                     )}

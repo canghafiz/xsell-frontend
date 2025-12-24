@@ -12,37 +12,40 @@ import PostLocation from "@/components/post/post_location";
 import { usePostStore } from "@/stores/post_store";
 import { getCurrencySymbol } from "@/helpers/currency";
 import { User } from "@/types/user";
-import {ProductListingPayload} from "@/types/post";
+import { ProductListingPayload } from "@/types/post";
 import postService from "@/services/post_service";
-import {useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
 import Toast from "@/components/toast";
 
-// Type untuk track image source
+/**
+ * Type used to track image source
+ */
 type ImageSource = {
     type: 'file' | 'url';
-    data: File | string; // File untuk new upload, string untuk existing URL
-    preview: string; // Preview URL untuk ditampilkan
+    data: File | string;
+    preview: string;
+    imageId?: number; // Used to track existing image ID
 };
 
 const getCurrencyLocale = (currency: string): string => {
     const localeMap: { [key: string]: string } = {
-        'IDR': 'id-ID',
-        'USD': 'en-US',
-        'EUR': 'de-DE',
-        'GBP': 'en-GB',
-        'SGD': 'en-SG',
-        'MYR': 'ms-MY',
-        'THB': 'th-TH',
-        'PHP': 'en-PH',
-        'VND': 'vi-VN',
-        'JPY': 'ja-JP',
-        'CNY': 'zh-CN',
-        'KRW': 'ko-KR',
-        'INR': 'en-IN',
-        'AUD': 'en-AU',
+        IDR: 'id-ID',
+        USD: 'en-US',
+        EUR: 'de-DE',
+        GBP: 'en-GB',
+        SGD: 'en-SG',
+        MYR: 'ms-MY',
+        THB: 'th-TH',
+        PHP: 'en-PH',
+        VND: 'vi-VN',
+        JPY: 'ja-JP',
+        CNY: 'zh-CN',
+        KRW: 'ko-KR',
+        INR: 'en-IN',
+        AUD: 'en-AU',
     };
 
-    return localeMap[currency] || 'en-US'; // default to en-US
+    return localeMap[currency] || 'en-US';
 };
 
 const formatPrice = (value: string): string => {
@@ -60,8 +63,8 @@ const parsePrice = (formattedValue: string): string => {
 };
 
 export default function PostListingForm() {
-    // Ganti structure images
     const [images, setImages] = useState<(ImageSource | null)[]>(Array(10).fill(null));
+    const [imagesToDelete, setImagesToDelete] = useState<string[]>([]); // Track image URLs to be deleted
     const [subCategories, setSubCategories] = useState<SubCategoryItem[]>([]);
     const [productSpecs, setProductSpecs] = useState<ProductSpecItem[]>([]);
     const [specs, setSpecs] = useState<{ [key: string]: string }>({});
@@ -73,11 +76,10 @@ export default function PostListingForm() {
         type: 'success' | 'error';
         message: string;
     } | null>(null);
+
     const router = useRouter();
+    const { category, location, product, clearProduct } = usePostStore();
 
-    const { category, location } = usePostStore();
-
-    // Untuk detect mode: 'create' atau 'update'
     const [mode, setMode] = useState<'create' | 'update'>('create');
     const [listingId, setListingId] = useState<number | null>(null);
 
@@ -90,20 +92,34 @@ export default function PostListingForm() {
         status: '',
     });
 
-    const [locationData, setLocationData] = useState({
-        latitude: 0,
-        longitude: 0,
-        address: '',
-    });
-
     const conditions = ['New', 'Like New', 'Good', 'Good Quite', 'Needs Repair'];
     const statuses = ['Available', 'Sold Out'];
 
     const imageSliderRef = useRef<HTMLDivElement>(null);
+    const [displayPrice, setDisplayPrice] = useState('');
 
     useEffect(() => {
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+            event.preventDefault();
+        };
 
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
     }, []);
+
+    /**
+     * Load existing product data when in update mode
+     */
+    useEffect(() => {
+        if (product) {
+            setMode('update');
+            setListingId(product.product_id);
+            loadExistingProduct();
+        }
+    }, [product]);
 
     useEffect(() => {
         if (category === '') {
@@ -113,15 +129,45 @@ export default function PostListingForm() {
         }
 
         loadSubCategories();
-
-        // TODO: Check if editing existing listing
-        // const editingId = getEditingListingId(); // dari query param atau store
-        // if (editingId) {
-        //     setMode('update');
-        //     setListingId(editingId);
-        //     loadExistingListing(editingId);
-        // }
     }, [category]);
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const res = await fetch('/api/auth/me');
+                const { user } = await res.json();
+                setUser(user);
+            } catch (e) {
+                console.warn('Failed to fetch user', e);
+                setUser(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchUser();
+    }, []);
+
+    useEffect(() => {
+        if (formData.price) {
+            setDisplayPrice(formatPrice(formData.price));
+        }
+    }, [formData.price]);
+
+    /**
+     * Populate specifications when product specs are loaded (update mode only)
+     */
+    useEffect(() => {
+        if (product && productSpecs.length > 0 && mode === 'update') {
+            const specsObj: { [key: string]: string } = {};
+            product.specs.forEach(productSpec => {
+                const matchingSpec = productSpecs.find(ps => ps.name === productSpec.name);
+                if (matchingSpec) {
+                    specsObj[matchingSpec.id] = productSpec.value;
+                }
+            });
+            setSpecs(specsObj);
+        }
+    }, [productSpecs, product, mode]);
 
     const loadSubCategories = async () => {
         try {
@@ -149,11 +195,9 @@ export default function PostListingForm() {
         setLoadingSpecs(true);
         try {
             const response = await productSpecService.getBySubId(subId);
-            if (response.success && Array.isArray(response.data)) {
-                setProductSpecs(response.data);
-            } else {
-                setProductSpecs([]);
-            }
+            setProductSpecs(
+                response.success && Array.isArray(response.data) ? response.data : []
+            );
         } catch (error) {
             console.error('Error loading product specifications:', error);
             setProductSpecs([]);
@@ -162,36 +206,88 @@ export default function PostListingForm() {
         }
     };
 
-    // Handler untuk new file upload
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const newImages = [...images];
-            newImages[index] = {
-                type: 'file',
-                data: file,
-                preview: URL.createObjectURL(file)
-            };
-            setImages(newImages);
+    /**
+     * Load existing product data for update mode
+     */
+    const loadExistingProduct = async () => {
+        if (!product) return;
+
+        try {
+            setFormData({
+                title: product.title,
+                description: product.description,
+                price: product.price.toString(),
+                condition: product.condition,
+                status: product.status,
+                subCategoryId: product.sub_category.sub_category_id.toString(),
+            });
+
+            await loadProductSpecs(product.sub_category.sub_category_id);
+
+            const loadedImages: (ImageSource | null)[] = Array(10).fill(null);
+            product.images
+                .sort((a, b) => a.order_seq - b.order_seq)
+                .forEach((img, idx) => {
+                    loadedImages[idx] = {
+                        type: 'url',
+                        data: img.url,
+                        preview: `${process.env.NEXT_PUBLIC_STORAGE_URL}${img.url}`,
+                        imageId: img.image_id,
+                    };
+                });
+
+            setImages(loadedImages);
+        } catch (error) {
+            console.error('Error loading product:', error);
         }
     };
 
-    // Handler untuk remove image
-    const handleRemoveImage = (index: number) => {
+    /**
+     * Handle image selection
+     */
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
         const newImages = [...images];
 
-        // Revoke object URL kalau ada
-        if (newImages[index]?.type === 'file') {
-            URL.revokeObjectURL(newImages[index]!.preview);
+        if (newImages[index]?.type === 'url') {
+            setImagesToDelete(prev => [...prev, newImages[index]!.data as string]);
+        }
+
+        newImages[index] = {
+            type: 'file',
+            data: file,
+            preview: URL.createObjectURL(file),
+        };
+
+        setImages(newImages);
+    };
+
+    /**
+     * Remove image from slot
+     */
+    const handleRemoveImage = (index: number) => {
+        const newImages = [...images];
+        const currentImage = newImages[index];
+
+        if (currentImage) {
+            if (currentImage.type === 'url') {
+                setImagesToDelete(prev => [...prev, currentImage.data as string]);
+            } else {
+                URL.revokeObjectURL(currentImage.preview);
+            }
         }
 
         newImages[index] = null;
         setImages(newImages);
     };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const handleInputChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    ) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        setFormData(prev => ({ ...prev, [name]: value }));
 
         if (name === 'subCategoryId' && value) {
             loadProductSpecs(Number(value));
@@ -199,45 +295,18 @@ export default function PostListingForm() {
     };
 
     const handleSpecChange = (specId: number, value: string) => {
-        setSpecs(prev => ({
-            ...prev,
-            [specId]: value
-        }));
+        setSpecs(prev => ({ ...prev, [specId]: value }));
     };
-
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const res = await fetch('/api/auth/me');
-                const { user } = await res.json();
-                setUser(user);
-            } catch (e) {
-                console.warn("Failed to fetch user", e);
-                setUser(null);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchUser();
-    }, []);
-
-    const [displayPrice, setDisplayPrice] = useState('');
 
     const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        const numericValue = parsePrice(value);
-
-        setFormData((prev) => ({ ...prev, price: numericValue }));
-        setDisplayPrice(formatPrice(value));
+        const numericValue = parsePrice(e.target.value);
+        setFormData(prev => ({ ...prev, price: numericValue }));
+        setDisplayPrice(formatPrice(e.target.value));
     };
 
-    useEffect(() => {
-        if (formData.price) {
-            setDisplayPrice(formatPrice(formData.price));
-        }
-    }, [formData.price]);
-
-    // 🔥 MAIN SUBMIT HANDLER
+    /**
+     * Main submit handler
+     */
     const handleSubmit = async () => {
         if (!user) {
             alert('Please login first');
@@ -249,13 +318,19 @@ export default function PostListingForm() {
             return;
         }
 
-        if (!formData.title.trim() || !formData.description.trim() || !formData.price ||
-            !formData.condition || !formData.status || !formData.subCategoryId) {
+        if (
+            !formData.title.trim() ||
+            !formData.description.trim() ||
+            !formData.price ||
+            !formData.condition ||
+            !formData.status ||
+            !formData.subCategoryId
+        ) {
             alert('Please fill all required fields');
             return;
         }
 
-        const validImages = images.filter(img => img !== null);
+        const validImages = images.filter(Boolean);
         if (validImages.length === 0) {
             alert('Please upload at least one image');
             return;
@@ -264,182 +339,89 @@ export default function PostListingForm() {
         setUploading(true);
 
         try {
-            if (mode === 'create') {
-                // === 1. Kumpulkan file baru ===
-                const newFilesToUpload: File[] = [];
-                const existingImageUrls: { [index: number]: string } = {};
+            const token = cookiesService.getCookie('login_data');
+            if (!token) return;
 
+            const newFiles: File[] = [];
+            const existingUrls: { [index: number]: string } = {};
+
+            images.forEach((img, index) => {
+                if (!img) return;
+                if (img.type === 'file') newFiles.push(img.data as File);
+                else existingUrls[index] = img.data as string;
+            });
+
+            let uploadedUrls: string[] = [];
+            const finalImages = { ...existingUrls };
+
+            if (newFiles.length > 0) {
+                const uploadResult = await storageService.uploadFiles(newFiles);
+                if (!uploadResult.success || !uploadResult.data) return;
+
+                uploadedUrls = uploadResult.data.map(i => i.file_url);
+
+                let uploadIdx = 0;
                 images.forEach((img, index) => {
-                    if (!img) return;
-                    if (img.type === 'file') {
-                        newFilesToUpload.push(img.data as File);
-                    } else {
-                        existingImageUrls[index] = img.data as string;
+                    if (img?.type === 'file') {
+                        finalImages[index] = uploadedUrls[uploadIdx++];
                     }
                 });
-
-                let uploadedUrls: string[] = [];
-                const finalImageMapping: { [index: number]: string } = { ...existingImageUrls };
-
-                // === 2. Upload file baru (jika ada) ===
-                if (newFilesToUpload.length > 0) {
-                    const uploadResult = await storageService.uploadFiles(newFilesToUpload);
-                    if (!uploadResult.success || !uploadResult.data) {
-                        alert('Failed to upload images');
-                        return;
-                    }
-
-                    uploadedUrls = uploadResult.data.map(item => item.file_url);
-
-                    // Assign ke index yang sesuai
-                    let uploadIndex = 0;
-                    images.forEach((img, index) => {
-                        if (img?.type === 'file') {
-                            finalImageMapping[index] = uploadedUrls[uploadIndex];
-                            uploadIndex++;
-                        }
-                    });
-                }
-
-                // === 3. Bangun payload ===
-                const imagesPayload = Object.entries(finalImageMapping)
-                    .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                    .map(([index, url], seq) => ({
-                        image_url: url,
-                        is_primary: seq === 0,
-                        order_sequence: seq + 1,
-                    }));
-
-                const specsPayload = Object.entries(specs)
-                    .filter(([_, v]) => v.trim() !== '')
-                    .map(([id, v]) => ({
-                        category_product_spec_id: parseInt(id),
-                        spec_value: v,
-                    }));
-
-                const createPayload: ProductListingPayload = {
-                    title: formData.title,
-                    description: formData.description,
-                    price: parseFloat(formData.price),
-                    condition: formData.condition,
-                    status: formData.status,
-                    sub_category_id: parseInt(formData.subCategoryId),
-                    listing_user_id: user.user_id,
-                    images: imagesPayload,
-                    specs: specsPayload,
-                    location: {
-                        latitude: location.latitude,
-                        longitude: location.longitude,
-                        address: location.address,
-                    },
-                };
-
-                // === 4. Kirim ke API ===
-                const token = cookiesService.getCookie('login_data');
-                if (!token) {
-                    alert('Authentication required');
-                    if (uploadedUrls.length > 0) {
-                        await storageService.deleteFiles(uploadedUrls);
-                    }
-                    return;
-                }
-
-                const result = await postService.createPost(token, createPayload);
-
-                if (result.success) {
-                    // TODO: redirect
-                    setToast({
-                        type: 'success',
-                        message: 'Ad posted successfully!',
-                    });
-                    setTimeout(() => {
-                        router.push('/my-ads')
-                    }, 1000);
-                } else {
-                    setToast({
-                        type: 'error',
-                        message: 'Failed to create listing',
-                    });
-                    if (uploadedUrls.length > 0) {
-                        console.log('🧹 Cleaning up:', uploadedUrls);
-                        await storageService.deleteFiles(uploadedUrls);
-                    }
-                }
-
-            } else {
-                // TODO: handle update mode
-                alert('Update mode not implemented');
             }
 
-        } catch (error) {
-            console.error('Submit error:', error);
-            alert('An error occurred. Check console.');
-        } finally {
-            setUploading(false);
-        }
-    };
-
-    // 🔄 Function untuk load existing listing (UPDATE mode)
-    const loadExistingListing = async (id: number) => {
-        try {
-            // TODO: Fetch listing data from API
-            // const response = await listingService.getById(id);
-
-            // Mock data untuk demo
-            const existingData = {
-                title: "iPhone 15 Pro Max 512GB",
-                description: "Still sealed, titanium finish.",
-                price: 1299.99,
-                condition: "Like New",
-                status: "Available",
-                sub_category_id: 1,
-                images: [
-                    { image_url: "/assets/iphone-1.webp", order_sequence: 1 },
-                    { image_url: "/assets/iphone-2.webp", order_sequence: 2 }
-                ],
-                specs: [
-                    { category_product_spec_id: 10, spec_value: "512" }
-                ],
+            const payload: ProductListingPayload = {
+                title: formData.title,
+                description: formData.description,
+                price: parseFloat(formData.price),
+                condition: formData.condition,
+                status: formData.status,
+                sub_category_id: parseInt(formData.subCategoryId),
+                listing_user_id: user.user_id,
+                images: Object.entries(finalImages)
+                    .sort(([a], [b]) => Number(a) - Number(b))
+                    .map(([_, url], idx) => ({
+                        image_url: url,
+                        is_primary: idx === 0,
+                        order_sequence: idx + 1,
+                    })),
+                specs: Object.entries(specs)
+                    .filter(([_, v]) => v.trim() !== '')
+                    .map(([id, v]) => ({
+                        category_product_spec_id: Number(id),
+                        spec_value: v,
+                    })),
                 location: {
-                    latitude: 5.4286498,
-                    longitude: 105.105925,
-                    address: "Jl. Sudirman No. 100"
-                }
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                    address: location.address,
+                },
             };
 
-            // Populate form
-            setFormData({
-                title: existingData.title,
-                description: existingData.description,
-                price: existingData.price.toString(),
-                condition: existingData.condition,
-                status: existingData.status,
-                subCategoryId: existingData.sub_category_id.toString()
-            });
+            const result =
+                mode === 'create'
+                    ? await postService.createPost(token, payload)
+                    : await postService.updatePost(token, listingId!, payload);
 
-            // Populate existing images as URLs
-            const loadedImages: (ImageSource | null)[] = Array(10).fill(null);
-            existingData.images.forEach((img, idx) => {
-                loadedImages[idx] = {
-                    type: 'url',
-                    data: img.image_url,
-                    preview: img.image_url
-                };
-            });
-            setImages(loadedImages);
+            if (result.success) {
+                if (mode === 'update' && imagesToDelete.length > 0) {
+                    await storageService.deleteFiles(imagesToDelete);
+                    setImagesToDelete([]);
+                }
 
-            // Populate specs
-            const specsObj: { [key: string]: string } = {};
-            existingData.specs.forEach(spec => {
-                specsObj[spec.category_product_spec_id] = spec.spec_value;
-            });
-            setSpecs(specsObj);
+                setToast({
+                    type: 'success',
+                    message: mode === 'create'
+                        ? 'Ad posted successfully!'
+                        : 'Ad updated successfully!',
+                });
 
-            // Populate location
-            setLocationData(existingData.location);
+                if (mode === 'update') clearProduct();
 
+                setTimeout(() => router.push('/my-ads'), 1000);
+            }
         } catch (error) {
-            console.error('Error loading listing:', error);
+            console.error('Submit error:', error);
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -451,6 +433,15 @@ export default function PostListingForm() {
                     message={toast.message}
                     onClose={() => setToast(null)}
                 />
+            )}
+
+            {/* Mode Indicator */}
+            {mode === 'update' && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                        <strong>Update Mode:</strong> You are editing an existing ad
+                    </p>
+                </div>
             )}
 
             {/* Upload Photos Section */}
@@ -486,7 +477,6 @@ export default function PostListingForm() {
                                                     unoptimized
                                                 />
                                             </div>
-                                            {/* Remove button */}
                                             <button
                                                 type="button"
                                                 onClick={(e) => {
@@ -497,7 +487,6 @@ export default function PostListingForm() {
                                             >
                                                 ×
                                             </button>
-                                            {/* Badge untuk existing vs new */}
                                             {img.type === 'url' && (
                                                 <div className="absolute bottom-1 left-1 bg-green-500 text-white text-xs px-1 rounded">
                                                     Saved
@@ -693,7 +682,7 @@ export default function PostListingForm() {
                 <button
                     onClick={handleSubmit}
                     disabled={uploading}
-                    className={`w-full py-3 rounded-lg font-semibold transition-colors ${
+                    className={`cursor-pointer w-full py-3 rounded-lg font-semibold transition-colors ${
                         uploading
                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             : 'bg-red-600 text-white hover:bg-red-700'

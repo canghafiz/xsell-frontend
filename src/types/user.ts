@@ -48,3 +48,14 @@ export interface User{
     photo_profile: string;
     created_at: string;
 }
+
+export interface UpdateUserDataPayload {
+    first_name: string;
+    last_name: string;
+    photo_profile_url: string;
+}
+
+export interface UpdateUserDataApiResponse {
+    success: boolean;
+    code: number;
+}

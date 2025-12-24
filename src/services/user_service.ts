@@ -3,7 +3,7 @@ import {
     LoginPayload,
     PwResetPayload,
     RegisterPayload,
-    SendOtpPayload,
+    SendOtpPayload, UpdateUserDataApiResponse, UpdateUserDataPayload,
     VerifyEmailPayload
 } from "@/types/user";
 
@@ -322,6 +322,47 @@ class UserService {
                 success: false,
                 code: 500,
                 data: message,
+            };
+        }
+    }
+    async updateData(
+        token: string,
+        userId: number,
+        payload: UpdateUserDataPayload
+    ): Promise<UpdateUserDataApiResponse> {
+        try {
+            const baseUrl =
+                process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+            const url = new URL(`${baseUrl}/api/user?userId=${userId}`);
+            const res = await fetch(url, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const responseData: AuthApiResponse = await res.json();
+
+            if (!res.ok) {
+                return {
+                    success: false,
+                    code: responseData.code ?? res.status,
+                };
+            }
+
+            return {
+                success: true,
+                code: responseData.code ?? 200,
+            };
+        } catch (error) {
+            console.error("Update user data error:", error);
+
+            return {
+                success: false,
+                code: 500,
             };
         }
     }

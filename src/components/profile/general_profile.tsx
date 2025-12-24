@@ -10,6 +10,7 @@ import { cookiesService } from "@/services/cookies_service";
 import { MyProductItem } from "@/types/product";
 import Link from "next/link";
 import {formatCurrency} from "@/utils/currency";
+import {useRouter} from "next/navigation";
 
 const buttonVariants = cva(
     "cursor-pointer font-medium text-sm flex items-center gap-2 whitespace-nowrap transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
@@ -43,6 +44,7 @@ export interface GeneralProfileProps {
 export default function GeneralProfile({ user, isOwnProfile = false }: GeneralProfileProps) {
     const [products, setProducts] = useState<MyProductItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -70,10 +72,6 @@ export default function GeneralProfile({ user, isOwnProfile = false }: GeneralPr
 
         fetchProducts();
     }, [user.user_id]);
-
-    const handleEditProfile = () => {
-        console.log("Edit profile clicked");
-    };
 
     const handleShareProfile = () => {
         const profileUrl = `${window.location.origin}/profile/${user.user_id}`;
@@ -122,7 +120,7 @@ export default function GeneralProfile({ user, isOwnProfile = false }: GeneralPr
                             <div className="w-24 h-24 rounded-lg overflow-hidden bg-red-400">
                                 {user.photo_profile ? (
                                     <Image
-                                        src={user.photo_profile}
+                                        src={`${process.env.NEXT_PUBLIC_STORAGE_URL}${user.photo_profile}`}
                                         alt={`${user.first_name} ${user.last_name}`}
                                         width={96}
                                         height={96}
@@ -152,17 +150,18 @@ export default function GeneralProfile({ user, isOwnProfile = false }: GeneralPr
                     {/* Right side - Action buttons */}
                     <div className="flex gap-3 w-full sm:w-auto">
                         {isOwnProfile && (
-                            <button
-                                type="button"
-                                onClick={handleEditProfile}
-                                className={buttonVariants({
-                                    variant: "outline",
-                                    size: "md",
-                                })}
-                            >
-                                <Edit className="w-4 h-4" />
-                                Edit profile
-                            </button>
+                            <Link href={`/profile/edit`}>
+                                <button
+                                    type="button"
+                                    className={buttonVariants({
+                                        variant: "outline",
+                                        size: "md",
+                                    })}
+                                >
+                                    <Edit className="w-4 h-4"/>
+                                    Edit profile
+                                </button>
+                            </Link>
                         )}
 
                         <button
@@ -173,7 +172,7 @@ export default function GeneralProfile({ user, isOwnProfile = false }: GeneralPr
                                 size: "md",
                             })}
                         >
-                            <Share2 className="w-4 h-4" />
+                            <Share2 className="w-4 h-4"/>
                             Share profile
                         </button>
                     </div>

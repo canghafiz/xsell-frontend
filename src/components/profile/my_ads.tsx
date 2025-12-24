@@ -9,11 +9,15 @@ import CardAds from "@/components/profile/card_ads";
 import ModalDialog from "@/components/modal_dialog";
 import { usePostStore } from "@/stores/post_store";
 import EmptyStateMyAds from "@/components/profile/empt_state_my_ads";
+import {useRouter} from "next/navigation";
+import {MapItem} from "@/types/map";
 
 export default function MyAds() {
     const [products, setProducts] = useState<MyProductItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<User | null>(null);
+    const router = useRouter();
+    const { setProduct, setLocation } = usePostStore();
 
     // 🔴 delete dialog state
     const [openDelete, setOpenDelete] = useState(false);
@@ -147,9 +151,31 @@ export default function MyAds() {
                         <CardAds
                             key={item.product_id}
                             item={item}
-                            onUpdate={(data) => {
-                                console.log("Update:", data);
-                                // TODO: open update modal
+                            onUpdate={async (data) => {
+                                const productRes = await productService.getDetailBySlug(data.slug);
+
+                                if (productRes.data) {
+                                    const theItem = productRes.data;
+
+                                    // Update cookie
+                                    cookiesService.setCookie("post_category ", JSON.stringify({
+                                        id: theItem.sub_category.category.category_id,
+                                        slug: theItem.sub_category.category.category_slug,
+                                    }))
+
+                                    // Update post store
+                                    setProduct(theItem);
+                                    setLocation({
+                                        longitude: theItem.location.longitude,
+                                        latitude: theItem.location.latitude,
+                                        address: theItem.location.address,
+                                    } as MapItem)
+                                }
+
+                                const postCategoryCookie = cookiesService.getCookie("post_category");
+                                if (postCategoryCookie) {
+                                    router.push("/post")
+                                }
                             }}
                             onDelete={(data) => {
                                 setSelectedProductId(data.product_id);
