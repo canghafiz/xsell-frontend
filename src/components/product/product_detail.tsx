@@ -167,7 +167,6 @@ export default function ProductDetail({ product, slug }: ProductDetailProps) {
                                     <p className="text-lg md:text-xl font-extrabold text-red-600">
                                         {formattedPrice}
                                     </p>
-                                    <p className="text-xs text-gray-500 mt-0.5">Price</p>
                                 </div>
                             </div>
                         </div>
